@@ -26,7 +26,9 @@
             <tbody>
                 {{range .Repositories}}
                 <tr>
-                    <td class="p-2"><a href="repositories/{{.}}.html">{{.}}</a></td>
+                    <td class="p-2"><a class="text-blue-600 hover:text-blue-800 visited:text-purple-600"
+                            href="/repo/{{.}}/">{{.}}</a>
+                    </td>
                     <td class="p-2 font-mono">docker pull {{.}}</td>
                 </tr>
                 {{end}}

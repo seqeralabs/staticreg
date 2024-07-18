@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>{{.RepositoryName}} | {{.RegistryName}}</title>
+</head>
+
+<body class="bg-gray-100 flex items-center justify-center">
+
+    <div class="bg-white p-8 mt-8 shadow-md w-full max-w-6xl">
+        <h1 class="text-3xl font-bold mb-4 text-center"><a
+                class="text-blue-600 hover:text-blue-800 visited:text-purple-600"
+                href="/">{{.RegistryName}}</a>/{{.RepositoryName}}</h1>
+
+        <table id="imageTable" class="table-fixed w-full bg-white border-collapse">
+            <thead>
+                <tr class="bg-gray-100">
+                    <th class="p-2 text-left">Name</th>
+                    <th class="p-2 text-left">Tag</th>
+                    <th class="p-2 text-left">Created</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Tags}}
+                <tr>
+                    <td class="p-2">{{.Name}}</td>
+                    <td class="p-2">{{.Tag}}</td>
+                    <td class="p-2">{{.CreatedAt}}</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+
+</body>
+
+</html>
