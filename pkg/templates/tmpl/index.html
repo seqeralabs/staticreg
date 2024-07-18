@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>{{.RegistryName}}</title>
+</head>
+
+<body class="bg-gray-100 flex items-center justify-center">
+
+    <div class="bg-white p-8 mt-8 shadow-md w-full max-w-6xl">
+        <h1 class="text-3xl font-bold mb-4 text-center">{{.RegistryName}}</h1>
+
+        <input type="text" id="searchInput" onkeyup="searchImages()" placeholder="Search for images.."
+            class="w-full p-2 mb-4 border border-gray-300 focus:outline-none focus:ring focus:ring-blue-400">
+
+        <table id="imageTable" class="table-fixed w-full bg-white border-collapse">
+            <thead>
+                <tr class="bg-gray-100">
+                    <th class="p-2 text-left">Repository Name</th>
+                    <th class="p-2 text-left">Pull Command</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Repositories}}
+                <tr>
+                    <td class="p-2"><a href="repositories/{{.}}.html">{{.}}</a></td>
+                    <td class="p-2 font-mono">docker pull {{.}}</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        function searchImages() {
+
+            var input = document.getElementById("searchInput");
+            var filter = input.value.toUpperCase();
+            var table = document.getElementById("imageTable");
+            var tr = table.getElementsByTagName("tr");
+
+            for (i = 1; i < tr.length; i++) {
+                td = tr[i].getElementsByTagName("td")[0];
+                if (td) {
+                    var txtValue = td.textContent || td.innerText;
+                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                        tr[i].style.display = "";
+                    } else {
+                        tr[i].style.display = "none";
+                    }
+                }
+            }
+        }
+    </script>
+
+</body>
+
+</html>
