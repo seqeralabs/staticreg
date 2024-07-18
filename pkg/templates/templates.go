@@ -10,8 +10,13 @@ import (
 //go:embed tmpl/*
 var templates embed.FS
 
-type IndexData struct {
+type BaseData struct {
+	AbsoluteDir  string
 	RegistryName string
+}
+
+type IndexData struct {
+	BaseData
 	Repositories []string
 }
 
@@ -30,7 +35,7 @@ type TagData struct {
 }
 
 type RepositoryData struct {
-	RegistryName   string
+	BaseData
 	RepositoryName string
 	Tags           []TagData
 }
