@@ -12,17 +12,26 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	registryHostname string
+	registryUser     string
+	registryPassword string
+	skipTLSVerify    bool
+	outputDirectory  string
+	absoluteDir      string
+)
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "staticreg",
 	Short: "Render an html listing of all images and tags in a v2 registry",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		regHost := config.Host{
-			Name:     "localhost:5000",
-			Hostname: "localhost:5000",
-			// User:     "",
-			// Pass:     "",
-			TLS: config.TLSDisabled,
+			Name:     registryHostname,
+			Hostname: registryHostname,
+			User:     registryUser,
+			Pass:     registryPassword,
+			TLS:      config.TLSDisabled,
 		}
 
 		rc := regclient.New(
@@ -32,13 +41,11 @@ var rootCmd = &cobra.Command{
 			regclient.WithUserAgent("seqera/staticreg"),
 		)
 
-		return generator.Generate(cmd.Context(), rc, regHost.Hostname, "/tmp/generated-html", "/tmp/generated-html")
+		return generator.Generate(cmd.Context(), rc, regHost.Hostname, outputDirectory, absoluteDir)
 
 	},
 }
 
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	err := rootCmd.Execute()
 	if err != nil {
@@ -47,13 +54,10 @@ func Execute() {
 }
 
 func init() {
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-
-	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.staticreg.yaml)")
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.PersistentFlags().StringVar(&registryHostname, "registry", "localhost:5000", "registry hostname (default is localhost:5000)")
+	rootCmd.PersistentFlags().StringVar(&registryUser, "user", "", "user (empty by default)")
+	rootCmd.PersistentFlags().StringVar(&registryPassword, "password", "", "password (empty by default)")
+	rootCmd.PersistentFlags().BoolVar(&skipTLSVerify, "skip-tls-verify", false, "disable TLS checks (default is false)")
+	rootCmd.PersistentFlags().StringVar(&outputDirectory, "output", "/tmp/generated-registry-html", "output directory (default is /tmp/generated-registry-html)")
+	rootCmd.PersistentFlags().StringVar(&absoluteDir, "absolute-dir", "/tmp/generated-registry-html", "absolute URL dir, to match link base path. (default is /tmp/generated-registry-html)")
 }
