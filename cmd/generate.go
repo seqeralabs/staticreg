@@ -33,7 +33,7 @@ var generateCmd = &cobra.Command{
 }
 
 func init() {
-	generateCmd.PersistentFlags().StringVar(&outputDirectory, "output", "/tmp/generated-registry-html", "output directory (default is /tmp/generated-registry-html)")
-	generateCmd.PersistentFlags().StringVar(&absoluteDir, "absolute-dir", "/tmp/generated-registry-html", "absolute URL dir, to match link base path. (default is /tmp/generated-registry-html)")
+	generateCmd.PersistentFlags().StringVar(&outputDirectory, "output", "/tmp/generated-registry-html", "output directory")
+	generateCmd.PersistentFlags().StringVar(&absoluteDir, "absolute-dir", "/tmp/generated-registry-html", "absolute URL dir, to match link base path")
 	rootCmd.AddCommand(generateCmd)
 }

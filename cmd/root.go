@@ -44,9 +44,9 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVar(&rootCfg.RegistryHostname, "registry", "localhost:5000", "registry hostname (default is localhost:5000)")
-	rootCmd.PersistentFlags().StringVar(&rootCfg.RegistryUser, "user", "", "user (empty by default)")
-	rootCmd.PersistentFlags().StringVar(&rootCfg.RegistryPassword, "password", "", "password (empty by default)")
-	rootCmd.PersistentFlags().BoolVar(&rootCfg.SkipTLSVerify, "skip-tls-verify", false, "disable TLS certificate checks (default is false)")
-	rootCmd.PersistentFlags().BoolVar(&rootCfg.TLSDisabled, "tls-disabled", true, "disable TLS (default is false)")
+	rootCmd.PersistentFlags().StringVar(&rootCfg.RegistryHostname, "registry", "localhost:5000", "registry hostname")
+	rootCmd.PersistentFlags().StringVar(&rootCfg.RegistryUser, "user", "", "user")
+	rootCmd.PersistentFlags().StringVar(&rootCfg.RegistryPassword, "password", "", "password")
+	rootCmd.PersistentFlags().BoolVar(&rootCfg.SkipTLSVerify, "skip-tls-verify", false, "disable TLS certificate checks")
+	rootCmd.PersistentFlags().BoolVar(&rootCfg.TLSDisabled, "tls-disabled", true, "disable TLS")
 }
