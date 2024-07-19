@@ -70,7 +70,7 @@ func Generate(
 				{
 					Name:      repo,
 					Tag:       "latest",
-					CreatedAt: "date here",
+					CreatedAt: "date here", // TODO
 				},
 			},
 		})

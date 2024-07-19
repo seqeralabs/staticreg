@@ -1,48 +1,38 @@
-/*
-Copyright © 2024 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
+	"log/slog"
 	"os"
 
-	"github.com/regclient/regclient"
-	"github.com/regclient/regclient/config"
-	"github.com/seqeralabs/staticreg/pkg/generator"
+	"github.com/seqeralabs/staticreg/pkg/cfg"
+	"github.com/seqeralabs/staticreg/pkg/observability/logger"
 	"github.com/spf13/cobra"
 )
 
-var (
-	registryHostname string
-	registryUser     string
-	registryPassword string
-	skipTLSVerify    bool
-	outputDirectory  string
-	absoluteDir      string
-)
+var rootCfg *cfg.Root = &cfg.Root{}
 
-// rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "staticreg",
-	Short: "Render an html listing of all images and tags in a v2 registry",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		regHost := config.Host{
-			Name:     registryHostname,
-			Hostname: registryHostname,
-			User:     registryUser,
-			Pass:     registryPassword,
-			TLS:      config.TLSDisabled,
-		}
+	Short: "A tool to browse images in an OCI registry",
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		ctx := cmd.Context()
+		log := logger.New(cmd.OutOrStderr(), true)
+		ctx = logger.Context(ctx, log)
+		cmd.SetContext(ctx)
 
-		rc := regclient.New(
-			regclient.WithConfigHost(regHost),
-			regclient.WithDockerCerts(),
-			regclient.WithDockerCreds(),
-			regclient.WithUserAgent("seqera/staticreg"),
+		log.Info(
+			"staticreg running with options",
+			slog.String("registry", rootCfg.RegistryHostname),
+			slog.Bool("skip-tls-verify", rootCfg.SkipTLSVerify),
+			slog.Bool("tls-disabled", rootCfg.TLSDisabled),
+			slog.String("user", rootCfg.RegistryUser),
+			slog.String("password", func() string {
+				if len(rootCfg.RegistryPassword) > 0 {
+					return "[redacted]"
+				}
+				return "[not provided]"
+			}()),
 		)
-
-		return generator.Generate(cmd.Context(), rc, regHost.Hostname, outputDirectory, absoluteDir)
-
 	},
 }
 
@@ -54,10 +44,9 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVar(&registryHostname, "registry", "localhost:5000", "registry hostname (default is localhost:5000)")
-	rootCmd.PersistentFlags().StringVar(&registryUser, "user", "", "user (empty by default)")
-	rootCmd.PersistentFlags().StringVar(&registryPassword, "password", "", "password (empty by default)")
-	rootCmd.PersistentFlags().BoolVar(&skipTLSVerify, "skip-tls-verify", false, "disable TLS checks (default is false)")
-	rootCmd.PersistentFlags().StringVar(&outputDirectory, "output", "/tmp/generated-registry-html", "output directory (default is /tmp/generated-registry-html)")
-	rootCmd.PersistentFlags().StringVar(&absoluteDir, "absolute-dir", "/tmp/generated-registry-html", "absolute URL dir, to match link base path. (default is /tmp/generated-registry-html)")
+	rootCmd.PersistentFlags().StringVar(&rootCfg.RegistryHostname, "registry", "localhost:5000", "registry hostname (default is localhost:5000)")
+	rootCmd.PersistentFlags().StringVar(&rootCfg.RegistryUser, "user", "", "user (empty by default)")
+	rootCmd.PersistentFlags().StringVar(&rootCfg.RegistryPassword, "password", "", "password (empty by default)")
+	rootCmd.PersistentFlags().BoolVar(&rootCfg.SkipTLSVerify, "skip-tls-verify", false, "disable TLS certificate checks (default is false)")
+	rootCmd.PersistentFlags().BoolVar(&rootCfg.TLSDisabled, "tls-disabled", true, "disable TLS (default is false)")
 }
