@@ -29,8 +29,6 @@ func ClientFromConfig(rootCfg cfg.Root) *regclient.RegClient {
 	regHost := hostFromConfig(rootCfg)
 	return regclient.New(
 		regclient.WithConfigHost(regHost),
-		regclient.WithDockerCerts(),
-		regclient.WithDockerCreds(),
 		regclient.WithUserAgent("seqera/staticreg"),
 	)
 }

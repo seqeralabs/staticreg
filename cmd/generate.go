@@ -14,7 +14,6 @@ var (
 	absoluteDir     string
 )
 
-// rootCmd represents the base command when called without any subcommands
 var generateCmd = &cobra.Command{
 	Use:   "generate",
 	Short: "Render an html listing of all images and tags in a v2 registry to an output directory",
