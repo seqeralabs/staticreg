@@ -2,7 +2,23 @@
 
 A tool to generate a static website from an OCI registry.
 
-## Development
+
+
+Now you can either generate a static website or start a web server that updates automatically its content based  on the target registry.
+
+## Generate a static website `staticreg`
+
+```bash
+./staticreg generate
+```
+
+## Serve the website directly (not implemented yet)
+
+```bash
+./staticreg serve
+```
+
+## Contributing
 
 Start a local Registry and push an image to it
 
@@ -17,18 +33,4 @@ Build staticreg
 
 ```bash
 go build .
-```
-
-Now you can either generate a static website or start a web server that updates automatically its content based  on the target registry.
-
-### Generate a static website `staticreg`
-
-```bash
-./staticreg generate
-```
-
-### Serve the website directly (not implemented yet)
-
-```bash
-./staticreg serve
 ```
