@@ -3,6 +3,7 @@ package cmd
 import (
 	"log/slog"
 
+	"github.com/seqeralabs/staticreg/pkg/filler"
 	"github.com/seqeralabs/staticreg/pkg/generator"
 	"github.com/seqeralabs/staticreg/pkg/observability/logger"
 	"github.com/seqeralabs/staticreg/pkg/registry"
@@ -28,7 +29,8 @@ var generateCmd = &cobra.Command{
 			slog.String("absolute-dir", absoluteDir),
 		)
 
-		gen := generator.New(rc, absoluteDir, rootCfg.RegistryHostname, outputDirectory)
+		filler := filler.New(rc, rootCfg.RegistryHostname, outputDirectory)
+		gen := generator.New(rc, filler, absoluteDir, rootCfg.RegistryHostname, outputDirectory)
 		return gen.Generate(cmd.Context())
 
 	},

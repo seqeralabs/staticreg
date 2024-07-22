@@ -2,21 +2,20 @@ package generator
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"log/slog"
 	"os"
 	"path"
-	"time"
 
 	"github.com/regclient/regclient"
-	"github.com/regclient/regclient/types/ref"
+	"github.com/seqeralabs/staticreg/pkg/filler"
 	"github.com/seqeralabs/staticreg/pkg/observability/logger"
 	"github.com/seqeralabs/staticreg/pkg/templates"
 )
 
 type Generator struct {
 	rc               *regclient.RegClient
+	filler           *filler.Filler
 	absoluteDir      string
 	registryHostname string
 	baseDir          string
@@ -24,6 +23,7 @@ type Generator struct {
 
 func New(
 	rc *regclient.RegClient,
+	filler *filler.Filler,
 	absoluteDir string,
 	registryHostname string,
 	baseDir string,
@@ -93,70 +93,12 @@ func (g *Generator) Generate(
 
 }
 
-func (g *Generator) tagData(ctx context.Context, repo string, tag string) (*templates.TagData, error) {
-	tagFullRef := fmt.Sprintf("%s/%s:%s", g.registryHostname, repo, tag)
-	tagRef, err := ref.New(tagFullRef)
-	if err != nil {
-		return nil, err
-	}
-
-	imageConfig, err := g.rc.ImageConfig(ctx, tagRef)
-	if err != nil {
-		return nil, err
-	}
-	innerConfig := imageConfig.GetConfig()
-
-	return &templates.TagData{
-		Name:          repo,
-		Tag:           tag,
-		PullReference: tagRef.CommonName(),
-		CreatedAt:     innerConfig.Created.Format(time.RFC3339),
-	}, nil
-}
-
-func (g *Generator) repoData(ctx context.Context, repo string) (*templates.RepositoryData, error) {
-	baseData := templates.BaseData{
-		AbsoluteDir:  g.absoluteDir,
-		RegistryName: g.registryHostname,
-	}
-
-	log := logger.FromContext(ctx).With(slog.String("repo", repo))
-	tags := []templates.TagData{}
-
-	repoFullRef := fmt.Sprintf("%s/%s", g.registryHostname, repo)
-	repoRef, err := ref.New(repoFullRef)
-	if err != nil {
-		return nil, err
-	}
-
-	tagList, err := g.rc.TagList(ctx, repoRef)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, tag := range tagList.Tags {
-		tagData, err := g.tagData(ctx, repo, tag)
-		if err != nil {
-			log.Warn("could not generate tag data", logger.ErrAttr(err), slog.String("tag", tag))
-		}
-		tags = append(tags, *tagData)
-	}
-	repoData := &templates.RepositoryData{
-		BaseData:       baseData,
-		RepositoryName: repo,
-		PullReference:  repoRef.CommonName(),
-		Tags:           tags,
-	}
-
-	return repoData, err
-}
-
 func (g *Generator) generateRepository(
 	ctx context.Context,
 	w io.Writer,
 	repo string,
 ) error {
-	repoData, err := g.repoData(ctx, repo)
+	repoData, err := g.filler.RepoData(ctx, repo)
 	if err != nil {
 		return err
 	}
@@ -185,7 +127,7 @@ func (g *Generator) generateIndex(
 	}
 
 	for _, repo := range repos.Repositories {
-		repoData, err := g.repoData(ctx, repo)
+		repoData, err := g.filler.RepoData(ctx, repo)
 		if err != nil {
 			log.Warn("could not retrieve repo data", slog.String("repo", repo), logger.ErrAttr(err))
 		}
