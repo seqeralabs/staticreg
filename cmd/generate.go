@@ -27,7 +27,9 @@ var generateCmd = &cobra.Command{
 			slog.String("output", outputDirectory),
 			slog.String("absolute-dir", absoluteDir),
 		)
-		return generator.Generate(cmd.Context(), rc, rootCfg.RegistryHostname, outputDirectory, absoluteDir)
+
+		gen := generator.New(rc, absoluteDir, rootCfg.RegistryHostname, outputDirectory)
+		return gen.Generate(cmd.Context())
 
 	},
 }
