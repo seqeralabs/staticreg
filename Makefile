@@ -17,7 +17,7 @@ endif
 
 GO_FILES := $(shell find . -type f \( -name '*.go' -o -name '*.html' -o -name '*.css' \) -not -name '*_test.go')
 
-_output/bin/staticreg: $(GO_FILES)
+_output/bin/staticreg: $(GO_FILES) static/css/output.css
 	$(GO_BUILD_CMD) $(BUILD_FLAGS) -o $@ .
 
 clean:
@@ -36,3 +36,7 @@ _output/deps/tailwindcss: _output/deps
 deps: _output/deps/tailwindcss
 	go mod tidy
 	go mod verify
+
+
+static/css/output.css: ./static/css/input.css _output/deps/tailwindcss
+	_output/deps/tailwindcss ./static/css/input.css -o $@

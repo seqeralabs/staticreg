@@ -33,7 +33,6 @@ Build staticreg
 
 ```bash
 make deps
-go generate ./...
 make clean
 make DEBUG=1
 ```

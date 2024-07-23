@@ -615,10 +615,6 @@ video {
   table-layout: auto;
 }
 
-.border-collapse {
-  border-collapse: collapse;
-}
-
 .items-center {
   align-items: center;
 }

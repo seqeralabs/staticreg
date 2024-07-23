@@ -1,4 +1,4 @@
-//go:generate ../_output/deps/tailwindcss -i ./css/input.css -o ./css/output.css
+//go:generate make -C ../ ./static/css/output.css
 package static
 
 import (
