@@ -41,5 +41,6 @@ make DEBUG=1
 
 ```bash
 make clean
-make GO="docker run -v $PWD:/staticreg -w /staticreg --rm $(cat .go_image) go"
+ARCH=amd64
+make GO="docker run -e GOARCH=$ARCH -v $PWD:/staticreg -w /staticreg --rm $(cat .go_image) go"
 ```

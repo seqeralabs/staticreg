@@ -20,10 +20,21 @@ jobs:
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Build
-        run: make GO="docker run -v $PWD:/staticreg -w /staticreg --rm $(cat .go_image) go"
-      - name: Build image and push
+      # amd64
+      - name: Build (amd64)
+        run: make GO="docker run  -e GOARCH=amd64 -v $PWD:/staticreg -w /staticreg --rm $(cat .go_image) go"
+      - name: Build image and push (amd64)
         uses: docker/build-push-action@v6
         with:
+          platforms: linux/amd64
+          push: true
+          tags: public.cr.seqera.io/seqeralabs/staticreg
+      # arm64
+      - name: Build (arm64)
+        run: make GO="docker run -e GOARCH=arm64 -v $PWD:/staticreg -w /staticreg --rm $(cat .go_image) go"
+      - name: Build (arm64)
+        uses: docker/build-push-action@v6
+        with:
+          platforms: linux/arm64
           push: true
           tags: public.cr.seqera.io/seqeralabs/staticreg
