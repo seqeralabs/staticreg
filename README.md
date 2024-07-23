@@ -32,5 +32,14 @@ docker push localhost:5000/alpine:latest
 Build staticreg
 
 ```bash
-go build .
+make clean
+make DEBUG=1
+```
+
+
+## Release build
+
+```bash
+make clean
+make GO="docker run -v $PWD:/staticreg -w /staticreg --rm $(cat .go_image) go"
 ```

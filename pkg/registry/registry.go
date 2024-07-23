@@ -14,7 +14,7 @@ func hostFromConfig(rootCfg cfg.Root) config.Host {
 		Pass:     rootCfg.RegistryPassword,
 	}
 
-	if rootCfg.TLSDisabled {
+	if !rootCfg.TLSEnabled {
 		regHost.TLS = config.TLSDisabled
 	}
 

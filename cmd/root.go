@@ -16,7 +16,8 @@ var rootCmd = &cobra.Command{
 	Short: "A tool to browse images in an OCI registry",
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
-		log := logger.New(cmd.OutOrStderr(), true)
+
+		log := logger.New(cmd.OutOrStderr(), rootCfg.LogInJSON)
 		ctx = logger.Context(ctx, log)
 		cmd.SetContext(ctx)
 
@@ -24,7 +25,7 @@ var rootCmd = &cobra.Command{
 			"staticreg running with options",
 			slog.String("registry", rootCfg.RegistryHostname),
 			slog.Bool("skip-tls-verify", rootCfg.SkipTLSVerify),
-			slog.Bool("tls-disabled", rootCfg.TLSDisabled),
+			slog.Bool("tls-enabled", rootCfg.TLSEnabled),
 			slog.String("user", rootCfg.RegistryUser),
 			slog.String("password", func() string {
 				if len(rootCfg.RegistryPassword) > 0 {
@@ -48,5 +49,6 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&rootCfg.RegistryUser, "user", "", "user")
 	rootCmd.PersistentFlags().StringVar(&rootCfg.RegistryPassword, "password", "", "password")
 	rootCmd.PersistentFlags().BoolVar(&rootCfg.SkipTLSVerify, "skip-tls-verify", false, "disable TLS certificate checks")
-	rootCmd.PersistentFlags().BoolVar(&rootCfg.TLSDisabled, "tls-disabled", true, "disable TLS")
+	rootCmd.PersistentFlags().BoolVar(&rootCfg.TLSEnabled, "tls-enable", false, "enable TLS")
+	rootCmd.PersistentFlags().BoolVar(&rootCfg.LogInJSON, "json-logging", false, "log in JSON")
 }

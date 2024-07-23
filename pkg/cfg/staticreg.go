@@ -5,5 +5,6 @@ type Root struct {
 	RegistryUser     string
 	RegistryPassword string
 	SkipTLSVerify    bool
-	TLSDisabled      bool
+	TLSEnabled       bool
+	LogInJSON        bool
 }
