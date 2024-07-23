@@ -75,6 +75,7 @@ func (f *Filler) RepoData(ctx context.Context, repo string) (*templates.Reposito
 		tagData, err := f.TagData(ctx, repo, tag)
 		if err != nil {
 			log.Warn("could not generate tag data", logger.ErrAttr(err), slog.String("tag", tag))
+			continue
 		}
 		tags = append(tags, *tagData)
 	}
