@@ -22,19 +22,21 @@ jobs:
         uses: docker/setup-buildx-action@v3
       # amd64
       - name: Build (amd64)
-        run: make GO="docker run  -e GOARCH=amd64 -v $PWD:/staticreg -w /staticreg --rm $(cat .go_image) go"
+        run: sudo make clean && make GO="docker run -e GOARCH=amd64 -v $PWD:/staticreg -w /staticreg --rm $(cat .go_image) go"
       - name: Build image and push (amd64)
         uses: docker/build-push-action@v6
         with:
+          context: .
           platforms: linux/amd64
           push: true
           tags: public.cr.seqera.io/seqeralabs/staticreg
       # arm64
       - name: Build (arm64)
-        run: make GO="docker run -e GOARCH=arm64 -v $PWD:/staticreg -w /staticreg --rm $(cat .go_image) go"
+        run: sudo make clean && make GO="docker run -e GOARCH=arm64 -v $PWD:/staticreg -w /staticreg --rm $(cat .go_image) go"
       - name: Build (arm64)
         uses: docker/build-push-action@v6
         with:
+          context: .
           platforms: linux/arm64
           push: true
           tags: public.cr.seqera.io/seqeralabs/staticreg
