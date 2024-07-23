@@ -2,11 +2,13 @@ package filler
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
 
 	"github.com/regclient/regclient"
+	"github.com/regclient/regclient/types/errs"
 	"github.com/regclient/regclient/types/ref"
 	"github.com/seqeralabs/staticreg/pkg/observability/logger"
 	"github.com/seqeralabs/staticreg/pkg/templates"
@@ -64,7 +66,9 @@ func (f *Filler) RepoData(ctx context.Context, repo string) (*templates.Reposito
 
 	tagList, err := f.rc.TagList(ctx, repoRef)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, errs.ErrNotFound) {
+			return nil, nil
+		}
 	}
 
 	for _, tag := range tagList.Tags {

@@ -40,7 +40,10 @@ func Context(ctx context.Context, logger *slog.Logger) context.Context {
 func FromContext(ctx context.Context) *slog.Logger {
 	logger := ctx.Value(loggerKey{})
 	if logger == nil {
-		return nil
+		logger = ctx.Value("logger")
+		if logger == nil {
+			return nil
+		}
 	}
 	return logger.(*slog.Logger)
 }
