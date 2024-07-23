@@ -49,3 +49,11 @@ func RenderRepository(w io.Writer, data RepositoryData) error {
 	}
 	return tpl.Execute(w, data)
 }
+
+func Render404(w io.Writer, data BaseData) error {
+	tpl, err := template.New("404.html").ParseFS(templates, "tmpl/404.html")
+	if err != nil {
+		return err
+	}
+	return tpl.Execute(w, data)
+}

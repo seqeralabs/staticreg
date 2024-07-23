@@ -15,6 +15,8 @@ type Server struct {
 type ServerImpl interface {
 	RepositoriesListHandler(ctx *gin.Context)
 	RepositoryHandler(ctx *gin.Context)
+	NotFoundHandler(ctx *gin.Context)
+	NoRouteHandler(ctx *gin.Context)
 }
 
 func New(bindAddr string, serverImpl ServerImpl, log *slog.Logger) (*Server, error) {
@@ -23,6 +25,8 @@ func New(bindAddr string, serverImpl ServerImpl, log *slog.Logger) (*Server, err
 	r := gin.New()
 
 	r.Use(injectLoggerMiddleware(log))
+	r.NoRoute(serverImpl.NoRouteHandler)
+	r.Use(serverImpl.NotFoundHandler)
 
 	r.GET("/", serverImpl.RepositoriesListHandler)
 	r.GET("/repo/*slug", serverImpl.RepositoryHandler)

@@ -25,7 +25,7 @@ var rootCmd = &cobra.Command{
 			"staticreg running with options",
 			slog.String("registry", rootCfg.RegistryHostname),
 			slog.Bool("skip-tls-verify", rootCfg.SkipTLSVerify),
-			slog.Bool("tls-enabled", rootCfg.TLSEnabled),
+			slog.Bool("tls-enable", rootCfg.TLSEnabled),
 			slog.String("user", rootCfg.RegistryUser),
 			slog.String("password", func() string {
 				if len(rootCfg.RegistryPassword) > 0 {

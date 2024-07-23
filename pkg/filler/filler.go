@@ -49,6 +49,13 @@ func (f *Filler) TagData(ctx context.Context, repo string, tag string) (*templat
 	}, nil
 }
 
+func (f *Filler) BaseData() templates.BaseData {
+	return templates.BaseData{
+		AbsoluteDir:  f.absoluteDir,
+		RegistryName: f.registryHostname,
+	}
+}
+
 func (f *Filler) RepoData(ctx context.Context, repo string) (*templates.RepositoryData, error) {
 	baseData := templates.BaseData{
 		AbsoluteDir:  f.absoluteDir,

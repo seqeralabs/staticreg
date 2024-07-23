@@ -12,6 +12,8 @@ import (
 	"github.com/seqeralabs/staticreg/pkg/filler"
 	"github.com/seqeralabs/staticreg/pkg/observability/logger"
 	"github.com/seqeralabs/staticreg/pkg/templates"
+
+	servererrors "github.com/seqeralabs/staticreg/pkg/server/errors"
 )
 
 type StaticregServer struct {
@@ -73,7 +75,7 @@ func (s *StaticregServer) RepositoryHandler(c *gin.Context) {
 	slug := c.Param("slug")
 
 	if len(slug) == 1 {
-		c.AbortWithStatus(http.StatusNotFound)
+		_ = c.AbortWithError(http.StatusNotFound, servererrors.ErrRepositoryNotFound)
 		return
 	}
 
@@ -89,7 +91,7 @@ func (s *StaticregServer) RepositoryHandler(c *gin.Context) {
 		return
 	}
 	if repoData == nil {
-		c.AbortWithStatus(http.StatusNotFound)
+		_ = c.AbortWithError(http.StatusNotFound, servererrors.ErrRepositoryNotFound)
 		return
 	}
 
@@ -101,4 +103,19 @@ func (s *StaticregServer) RepositoryHandler(c *gin.Context) {
 
 	c.Status(http.StatusOK)
 
+}
+
+func (s *StaticregServer) NotFoundHandler(c *gin.Context) {
+	c.Next()
+	if len(c.Errors) == 0 {
+		return
+	}
+
+	baseData := s.dataFiller.BaseData()
+	_ = templates.Render404(c.Writer, baseData)
+}
+
+func (s *StaticregServer) NoRouteHandler(c *gin.Context) {
+	baseData := s.dataFiller.BaseData()
+	_ = templates.Render404(c.Writer, baseData)
 }

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Not Found | {{.RegistryName}}</title>
+</head>
+
+<body class="bg-gray-100">
+    <div class="h-screen flex items-center justify-center bg-gray-50">
+        <div class="max-w-md mx-auto text-center">
+            <h1 class="text-4xl font-bold mb-4">404 Not Found</h1>
+            <p class="text-lg text-gray-600 mb-8">The page you're looking for doesn't exist.</p>
+            <a href="{{.AbsoluteDir}}"
+                class="inline-block bg-[#4256e7] hover:bg-black text-white font-bold py-2 px-4 rounded-full">Go
+                back home</a>
+        </div>
+    </div>
+
+
+</body>
+
+</html>
