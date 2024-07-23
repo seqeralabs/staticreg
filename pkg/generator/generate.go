@@ -34,6 +34,7 @@ func New(
 		absoluteDir:      absoluteDir,
 		registryHostname: registryHostname,
 		baseDir:          baseDir,
+		filler:           filler,
 	}
 }
 
