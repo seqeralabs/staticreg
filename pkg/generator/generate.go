@@ -11,6 +11,7 @@ import (
 	"github.com/seqeralabs/staticreg/pkg/filler"
 	"github.com/seqeralabs/staticreg/pkg/observability/logger"
 	"github.com/seqeralabs/staticreg/pkg/templates"
+	"github.com/seqeralabs/staticreg/static"
 )
 
 type Generator struct {
@@ -28,7 +29,6 @@ func New(
 	registryHostname string,
 	baseDir string,
 ) *Generator {
-	absoluteDir = sanitizeAbsoluteDirPath(absoluteDir)
 	return &Generator{
 		rc:               rc,
 		absoluteDir:      absoluteDir,
@@ -38,22 +38,25 @@ func New(
 	}
 }
 
-func sanitizeAbsoluteDirPath(inputPath string) string {
-	cleanPath := path.Clean(inputPath)
-	if cleanPath[len(cleanPath)-1] != '/' {
-		cleanPath += "/"
-	}
-	return cleanPath
-}
-
 func (g *Generator) Generate(
 	ctx context.Context) error {
 	log := logger.FromContext(ctx)
 
-	if err := os.MkdirAll(g.baseDir, 0755); err != nil {
+	staticDir := path.Join(g.baseDir, "static")
+
+	if err := os.MkdirAll(staticDir, 0755); err != nil {
 		return err
 	}
 
+	styleCSSFile, err := os.Create(path.Join(staticDir, "style.css"))
+	if err != nil {
+		return err
+	}
+	err = static.RenderStyle(styleCSSFile)
+	if err != nil {
+		return err
+	}
+	defer styleCSSFile.Close()
 	log.Info("generating repositories list page")
 	indexFile, err := os.Create(path.Join(g.baseDir, "index.html"))
 	if err != nil {

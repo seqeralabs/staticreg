@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"log/slog"
+	"path"
 
 	"github.com/seqeralabs/staticreg/pkg/filler"
 	"github.com/seqeralabs/staticreg/pkg/generator"
@@ -24,13 +25,14 @@ var generateCmd = &cobra.Command{
 
 		rc := registry.ClientFromConfig(*rootCfg)
 
+		sanitizedAbsoluteDir := sanitizeAbsoluteDirPath(absoluteDir)
 		log.Info("generating static website",
 			slog.String("output", outputDirectory),
-			slog.String("absolute-dir", absoluteDir),
+			slog.String("absolute-dir", sanitizedAbsoluteDir),
 		)
 
-		filler := filler.New(rc, rootCfg.RegistryHostname, outputDirectory)
-		gen := generator.New(rc, filler, absoluteDir, rootCfg.RegistryHostname, outputDirectory)
+		filler := filler.New(rc, rootCfg.RegistryHostname, sanitizedAbsoluteDir)
+		gen := generator.New(rc, filler, sanitizedAbsoluteDir, rootCfg.RegistryHostname, outputDirectory)
 		return gen.Generate(cmd.Context())
 
 	},
@@ -40,4 +42,12 @@ func init() {
 	generateCmd.PersistentFlags().StringVar(&outputDirectory, "output", "/tmp/generated-registry-html", "output directory")
 	generateCmd.PersistentFlags().StringVar(&absoluteDir, "absolute-dir", "/tmp/generated-registry-html", "absolute URL dir, to match link base path")
 	rootCmd.AddCommand(generateCmd)
+}
+
+func sanitizeAbsoluteDirPath(inputPath string) string {
+	cleanPath := path.Clean(inputPath)
+	if cleanPath[len(cleanPath)-1] != '/' {
+		cleanPath += "/"
+	}
+	return cleanPath
 }
