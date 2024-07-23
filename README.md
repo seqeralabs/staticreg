@@ -12,7 +12,7 @@ Now you can either generate a static website or start a web server that updates 
 ./staticreg generate
 ```
 
-## Serve the website directly (not implemented yet)
+## Serve the website directly
 
 ```bash
 ./staticreg serve
