@@ -3,7 +3,11 @@ package server
 import (
 	"log/slog"
 	"net/http"
+	"time"
 
+	"github.com/gin-contrib/cache"
+	"github.com/gin-contrib/cache/persistence"
+	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,6 +21,7 @@ type ServerImpl interface {
 	RepositoryHandler(ctx *gin.Context)
 	NotFoundHandler(ctx *gin.Context)
 	NoRouteHandler(ctx *gin.Context)
+	CSSHandler(ctx *gin.Context)
 }
 
 func New(bindAddr string, serverImpl ServerImpl, log *slog.Logger) (*Server, error) {
@@ -24,12 +29,18 @@ func New(bindAddr string, serverImpl ServerImpl, log *slog.Logger) (*Server, err
 
 	r := gin.New()
 
+	store := persistence.NewInMemoryStore(time.Second)
+
+	r.Use(gzip.Gzip(gzip.DefaultCompression))
 	r.Use(injectLoggerMiddleware(log))
+
 	r.NoRoute(serverImpl.NoRouteHandler)
 	r.Use(serverImpl.NotFoundHandler)
 
-	r.GET("/", serverImpl.RepositoriesListHandler)
-	r.GET("/repo/*slug", serverImpl.RepositoryHandler)
+	r.GET("/static/style.css", serverImpl.CSSHandler)
+
+	r.GET("/", cache.CachePage(store, time.Minute, serverImpl.RepositoriesListHandler))
+	r.GET("/repo/*slug", cache.CachePage(store, time.Minute, serverImpl.RepositoryHandler))
 
 	srv := &http.Server{
 		Handler: r,

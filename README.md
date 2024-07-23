@@ -32,6 +32,8 @@ docker push localhost:5000/alpine:latest
 Build staticreg
 
 ```bash
+make deps
+go generate ./...
 make clean
 make DEBUG=1
 ```
