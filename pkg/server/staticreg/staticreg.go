@@ -72,11 +72,10 @@ func (s *StaticregServer) RepositoriesListHandler(c *gin.Context) {
 }
 
 func (s *StaticregServer) RepositoryHandler(c *gin.Context) {
-
 	slug := c.Param("slug")
 
 	if len(slug) == 1 {
-		_ = c.AbortWithError(http.StatusNotFound, servererrors.ErrRepositoryNotFound)
+		_ = c.AbortWithError(http.StatusBadRequest, servererrors.ErrSlugTooShort)
 		return
 	}
 
@@ -117,6 +116,22 @@ func (s *StaticregServer) NotFoundHandler(c *gin.Context) {
 	}
 	baseData := s.dataFiller.BaseData()
 	err := templates.Render404(c.Writer, baseData)
+	if err != nil {
+		_ = c.AbortWithError(http.StatusInternalServerError, err)
+	}
+}
+
+func (s *StaticregServer) InternalServerErrorHandler(c *gin.Context) {
+	c.Next()
+	if len(c.Errors) == 0 {
+		return
+	}
+
+	if c.Writer.Status() != http.StatusInternalServerError {
+		return
+	}
+	baseData := s.dataFiller.BaseData()
+	err := templates.Render500(c.Writer, baseData)
 	if err != nil {
 		_ = c.AbortWithError(http.StatusInternalServerError, err)
 	}

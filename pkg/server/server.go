@@ -20,6 +20,7 @@ type ServerImpl interface {
 	RepositoryHandler(ctx *gin.Context)
 	NotFoundHandler(ctx *gin.Context)
 	NoRouteHandler(ctx *gin.Context)
+	InternalServerErrorHandler(ctx *gin.Context)
 	CSSHandler(ctx *gin.Context)
 }
 
@@ -38,6 +39,7 @@ func New(
 
 	r.NoRoute(serverImpl.NoRouteHandler)
 	r.Use(serverImpl.NotFoundHandler)
+	r.Use(serverImpl.InternalServerErrorHandler)
 
 	r.GET("/static/style.css", serverImpl.CSSHandler)
 

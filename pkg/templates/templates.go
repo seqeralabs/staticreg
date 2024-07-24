@@ -58,3 +58,11 @@ func Render404(w io.Writer, data BaseData) error {
 	}
 	return tpl.Execute(w, data)
 }
+
+func Render500(w io.Writer, data BaseData) error {
+	tpl, err := template.New("500.html").ParseFS(templates, "tmpl/500.html")
+	if err != nil {
+		return err
+	}
+	return tpl.Execute(w, data)
+}
