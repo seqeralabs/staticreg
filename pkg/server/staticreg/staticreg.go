@@ -130,11 +130,15 @@ func (s *StaticregServer) InternalServerErrorHandler(c *gin.Context) {
 	if c.Writer.Status() != http.StatusInternalServerError {
 		return
 	}
+	log := logger.FromContext(c)
 	baseData := s.dataFiller.BaseData()
 	err := templates.Render500(c.Writer, baseData)
 	if err != nil {
-		_ = c.AbortWithError(http.StatusInternalServerError, err)
+		log.Error("error rendering error page", logger.ErrAttr(c.AbortWithError(http.StatusInternalServerError, err)))
 	}
+
+	log.Error("internal server error", slog.Any("errors", c.Errors))
+
 }
 
 func (s *StaticregServer) NoRouteHandler(c *gin.Context) {
