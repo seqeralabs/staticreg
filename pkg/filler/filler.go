@@ -53,14 +53,12 @@ func (f *Filler) BaseData() templates.BaseData {
 	return templates.BaseData{
 		AbsoluteDir:  f.absoluteDir,
 		RegistryName: f.registryHostname,
+		LastUpdated:  time.Now().Format(time.RFC3339),
 	}
 }
 
 func (f *Filler) RepoData(ctx context.Context, repo string) (*templates.RepositoryData, error) {
-	baseData := templates.BaseData{
-		AbsoluteDir:  f.absoluteDir,
-		RegistryName: f.registryHostname,
-	}
+	baseData := f.BaseData()
 
 	log := logger.FromContext(ctx).With(slog.String("repo", repo))
 	tags := []templates.TagData{}

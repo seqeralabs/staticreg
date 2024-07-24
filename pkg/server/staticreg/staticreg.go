@@ -39,10 +39,7 @@ func (s *StaticregServer) RepositoriesListHandler(c *gin.Context) {
 	log := logger.FromContext(c)
 
 	repositoriesData := []templates.RepositoryData{}
-	baseData := templates.BaseData{
-		AbsoluteDir:  "/",
-		RegistryName: s.registryHostname,
-	}
+	baseData := s.dataFiller.BaseData()
 
 	repos, err := s.rc.RepoList(c, s.registryHostname)
 	if err != nil {

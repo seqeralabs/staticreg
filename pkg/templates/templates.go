@@ -13,6 +13,7 @@ var templates embed.FS
 type BaseData struct {
 	AbsoluteDir  string
 	RegistryName string
+	LastUpdated  string
 }
 
 type IndexData struct {

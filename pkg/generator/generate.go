@@ -120,11 +120,8 @@ func (g *Generator) generateIndex(
 	log := logger.FromContext(ctx)
 
 	repositoriesData := []templates.RepositoryData{}
-	baseData := templates.BaseData{
-		AbsoluteDir:  g.absoluteDir,
-		RegistryName: g.registryHostname,
-	}
 
+	baseData := g.filler.BaseData()
 	repos, err := g.rc.RepoList(ctx, g.registryHostname)
 	if err != nil {
 		return err
