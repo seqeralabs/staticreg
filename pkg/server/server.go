@@ -32,7 +32,7 @@ func New(
 	gin.SetMode(gin.ReleaseMode)
 
 	r := gin.New()
-
+	r.Use(gin.Recovery())
 	store := persistence.NewInMemoryStore(cacheDuration)
 	r.Use(injectLoggerMiddleware(log))
 

@@ -112,6 +112,9 @@ func (s *StaticregServer) NotFoundHandler(c *gin.Context) {
 		return
 	}
 
+	if c.Writer.Status() != http.StatusNotFound {
+		return
+	}
 	baseData := s.dataFiller.BaseData()
 	err := templates.Render404(c.Writer, baseData)
 	if err != nil {
