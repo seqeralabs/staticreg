@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"sort"
 	"time"
 
 	"github.com/regclient/regclient"
@@ -82,14 +83,41 @@ func (f *Filler) RepoData(ctx context.Context, repo string) (*templates.Reposito
 			log.Warn("could not generate tag data", logger.ErrAttr(err), slog.String("tag", tag))
 			continue
 		}
+		if tagData == nil {
+			continue
+		}
 		tags = append(tags, *tagData)
 	}
+	if len(tags) == 0 {
+		return nil, nil
+	}
+
+	orderedTags := orderTagsByDate(tags)
+	if len(orderedTags) == 0 {
+		return nil, nil
+	}
+	mostRecentTag := orderedTags[0]
 	repoData := &templates.RepositoryData{
 		BaseData:       baseData,
 		RepositoryName: repo,
-		PullReference:  repoRef.CommonName(),
-		Tags:           tags,
+		PullReference:  mostRecentTag.PullReference,
+		Tags:           orderedTags,
 	}
 
 	return repoData, err
+}
+
+func orderTagsByDate(tags []templates.TagData) []templates.TagData {
+	sort.Slice(tags, func(i, j int) bool {
+		dateI, err := time.Parse(time.RFC3339, tags[i].CreatedAt)
+		if err != nil {
+			return false
+		}
+		dateJ, err := time.Parse(time.RFC3339, tags[j].CreatedAt)
+		if err != nil {
+			return false
+		}
+		return dateI.After(dateJ)
+	})
+	return tags
 }

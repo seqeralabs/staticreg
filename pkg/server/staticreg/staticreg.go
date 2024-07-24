@@ -52,6 +52,9 @@ func (s *StaticregServer) RepositoriesListHandler(c *gin.Context) {
 		if err != nil {
 			log.Warn("could not retrieve repo data", slog.String("repo", repo), logger.ErrAttr(err))
 		}
+		if repoData == nil {
+			continue
+		}
 		repositoriesData = append(repositoriesData, *repoData)
 	}
 

@@ -32,7 +32,9 @@
                         <td class="p-2"><a class="text-blue-600 hover:text-blue-800 visited:text-purple-600"
                                 href="{{$.AbsoluteDir}}repo/{{.RepositoryName}}">{{.RepositoryName}}</a>
                         </td>
-                        <td class="p-2 font-mono text-sm">docker pull {{.PullReference}}</td>
+                        <td class="p-2 font-mono text-sm">docker pull {{.PullReference}}
+
+                        </td>
                     </tr>
                     {{end}}
                 </tbody>
@@ -40,7 +42,7 @@
         </div>
     </main>
 
-    <footer class="bg-gray-200 h-screen p-4 text-center text-sm text-gray-600">
+    <footer class="bg-gray-200 p-4 text-center text-sm text-gray-600">
         <p>Last updated: {{.LastUpdated}}</p>
     </footer>
 

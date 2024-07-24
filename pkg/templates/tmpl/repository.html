@@ -8,14 +8,17 @@
     <title>{{.RepositoryName}} | {{.RegistryName}}</title>
 </head>
 
-<body class="bg-gray-100 h-full">
-    <header class="bg-white shadow">
-        <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+<body class="bg-gray-100 h-screen w-screen">
+    <header class="bg-white shadow flex justify-between flex-wrap bg-teal w-screen">
+        <div class="mx-auto px-4 py-6 sm:px-6 lg:px-8">
             <h1 class="text-3xl font-bold tracking-tight text-gray-900"><a
                     class="text-blue-600 hover:text-blue-800 visited:text-purple-600"
                     href="{{.AbsoluteDir}}">{{.RegistryName}}</a>/{{.RepositoryName}}</h1>
         </div>
+
     </header>
+
+
     <main>
         <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
             <table class="w-full bg-white border">
@@ -42,7 +45,7 @@
             </table>
         </div>
     </main>
-    <footer class="bg-gray-200 h-screen p-4 text-center text-sm text-gray-600">
+    <footer class="p-4 text-center text-sm text-gray-600">
         <p>Last updated: {{.LastUpdated}}</p>
     </footer>
 </body>
