@@ -102,6 +102,7 @@ func (f *Filler) RepoData(ctx context.Context, repo string) (*templates.Reposito
 		RepositoryName: repo,
 		PullReference:  mostRecentTag.PullReference,
 		Tags:           orderedTags,
+		LastUpdatedAt:  mostRecentTag.CreatedAt,
 	}
 
 	return repoData, err

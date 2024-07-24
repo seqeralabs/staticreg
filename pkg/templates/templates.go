@@ -41,6 +41,7 @@ type RepositoryData struct {
 	RepositoryName string
 	PullReference  string
 	Tags           []TagData
+	LastUpdatedAt  string
 }
 
 func RenderRepository(w io.Writer, data RepositoryData) error {

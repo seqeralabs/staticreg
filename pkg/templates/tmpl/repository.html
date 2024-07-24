@@ -26,21 +26,20 @@
                 <table class="w-full bg-white border divide-gray-200 ">
                     <thead>
                         <tr class="bg-gray-100">
-                            <th class="p-2 w-2/12 text-lef td-classt">Name</th>
-                            <th class="p-2 w-2/12 text-left">Tag</th>
-                            <th class="p-2 w-2/12 text-left">Created</th>
-                            <th class="p-2 w-6/12 text-left">Pull Command</th>
+                            <th class="p-2 text-left">Tag</th>
+                            <th class="p-2 text-left">Created</th>
+                            <th class="p-2 text-left">Pull Command</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-300">
                         {{range .Tags}}
                         <tr class="[&>*]:whitespace-nowrap [&>*]:px-4 [&>*]:py-2">
-                            <td class="p-2 ">{{.Name}}</td>
-                            <td class="p-2"><span
-                                    class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">{{.Tag}}</span>
+                            <td class="p-2 text-left">{{.Tag}}
                             </td>
-                            <td class="p-2 text-xs">{{.CreatedAt}}</td>
-                            <td class="p-2 font-mono text-sm">docker pull {{.PullReference}}</td>
+                            <td class="p-2 text-xs text-left">{{.CreatedAt}}</td>
+                            <td class="p-2 font-mono text-left"><span
+                                    class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">docker
+                                    pull {{.PullReference}}</span></td>
                         </tr>
                         {{end}}
                     </tbody>
