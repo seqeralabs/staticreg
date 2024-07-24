@@ -8,41 +8,44 @@
     <title>{{.RepositoryName}} | {{.RegistryName}}</title>
 </head>
 
-<body class="bg-gray-100 h-screen w-screen">
-    <header class="bg-white shadow flex justify-between flex-wrap bg-teal w-screen">
-        <div class="mx-auto px-4 py-6 sm:px-6 lg:px-8">
-            <h1 class="text-3xl font-bold tracking-tight text-gray-900"><a
+<body class="bg-gray-100 min-w-[240px]">
+
+
+    <header class="bg-white shadow">
+        <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+            <h1 class="lg:text-3xl xs:text-sm font-bold tracking-tight text-gray-900"><a
                     class="text-blue-600 hover:text-blue-800 visited:text-purple-600"
                     href="{{.AbsoluteDir}}">{{.RegistryName}}</a>/{{.RepositoryName}}</h1>
         </div>
-
     </header>
 
 
     <main>
         <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-            <table class="w-full bg-white border">
-                <thead>
-                    <tr class="bg-gray-100">
-                        <th class="p-2 w-2/12 text-lef td-classt">Name</th>
-                        <th class="p-2 w-2/12 text-left">Tag</th>
-                        <th class="p-2 w-2/12 text-left">Created</th>
-                        <th class="p-2 w-6/12 text-left">Pull Command</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {{range .Tags}}
-                    <tr>
-                        <td class="p-2 ">{{.Name}}</td>
-                        <td class="p-2"><span
-                                class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">{{.Tag}}</span>
-                        </td>
-                        <td class="p-2 text-xs">{{.CreatedAt}}</td>
-                        <td class="p-2 font-mono text-sm">docker pull {{.PullReference}}</td>
-                    </tr>
-                    {{end}}
-                </tbody>
-            </table>
+            <div class="overflow-x-auto">
+                <table class="w-full bg-white border divide-gray-200 ">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="p-2 w-2/12 text-lef td-classt">Name</th>
+                            <th class="p-2 w-2/12 text-left">Tag</th>
+                            <th class="p-2 w-2/12 text-left">Created</th>
+                            <th class="p-2 w-6/12 text-left">Pull Command</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-300">
+                        {{range .Tags}}
+                        <tr class="[&>*]:whitespace-nowrap [&>*]:px-4 [&>*]:py-2">
+                            <td class="p-2 ">{{.Name}}</td>
+                            <td class="p-2"><span
+                                    class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">{{.Tag}}</span>
+                            </td>
+                            <td class="p-2 text-xs">{{.CreatedAt}}</td>
+                            <td class="p-2 font-mono text-sm">docker pull {{.PullReference}}</td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </main>
     <footer class="p-4 text-center text-sm text-gray-600">

@@ -8,10 +8,10 @@
     <title>{{.RegistryName}}</title>
 </head>
 
-<body class=" bg-gray-100 h-full">
+<body class="bg-gray-100 min-w-[240px]">
     <header class="bg-white shadow">
         <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-            <h1 class="text-3xl font-bold tracking-tight text-gray-900">{{.RegistryName}}</h1>
+            <h1 class="lg:text-3xl xs:text-sm font-bold tracking-tight text-gray-900">{{.RegistryName}}</h1>
         </div>
 
     </header>
@@ -19,26 +19,28 @@
         <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
             <input type="text" id="searchInput" onkeyup="searchImages()" placeholder="Search for images.."
                 class="w-full p-2 mb-4 border border-gray-300 focus:outline-none focus:ring focus:ring-blue-400">
-            <table id="imageTable" class="lg:table-fixed table-auto w-full bg-white border">
-                <thead>
-                    <tr class="bg-gray-100">
-                        <th class="p-2 text-left">Name</th>
-                        <th class="p-2 text-left">Pull Command</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {{range .Repositories}}
-                    <tr>
-                        <td class="p-2"><a class="text-blue-600 hover:text-blue-800 visited:text-purple-600"
-                                href="{{$.AbsoluteDir}}repo/{{.RepositoryName}}">{{.RepositoryName}}</a>
-                        </td>
-                        <td class="p-2 font-mono text-sm">docker pull {{.PullReference}}
+            <div class="overflow-x-auto">
+                <table id="imageTable" class="w-full bg-white border divide-gray-200 ">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="p-2 text-left">Name</th>
+                            <th class="p-2 text-left">Pull Command</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-300">
+                        {{range .Repositories}}
+                        <tr class="[&>*]:whitespace-nowrap [&>*]:px-4 [&>*]:py-2">
+                            <td class="p-2"><a class="text-blue-600 hover:text-blue-800 visited:text-purple-600"
+                                    href="{{$.AbsoluteDir}}repo/{{.RepositoryName}}">{{.RepositoryName}}</a>
+                            </td>
+                            <td class="p-2 font-mono text-sm">docker pull {{.PullReference}}
 
-                        </td>
-                    </tr>
-                    {{end}}
-                </tbody>
-            </table>
+                            </td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </main>
 

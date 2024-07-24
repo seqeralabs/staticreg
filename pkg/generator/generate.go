@@ -2,6 +2,7 @@ package generator
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log/slog"
 	"os"
@@ -106,6 +107,9 @@ func (g *Generator) generateRepository(
 	if err != nil {
 		return err
 	}
+	if repoData == nil {
+		return fmt.Errorf("empty repo data")
+	}
 	err = templates.RenderRepository(w, *repoData)
 	if err != nil {
 		return err
@@ -131,6 +135,9 @@ func (g *Generator) generateIndex(
 		repoData, err := g.filler.RepoData(ctx, repo)
 		if err != nil {
 			log.Warn("could not retrieve repo data", slog.String("repo", repo), logger.ErrAttr(err))
+		}
+		if repoData == nil {
+			continue
 		}
 		repositoriesData = append(repositoriesData, *repoData)
 	}
