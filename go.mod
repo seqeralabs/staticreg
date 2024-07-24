@@ -4,7 +4,6 @@ go 1.22.2
 
 require (
 	github.com/gin-contrib/cache v1.3.0
-	github.com/gin-contrib/gzip v1.0.1
 	github.com/gin-gonic/gin v1.10.0
 	github.com/regclient/regclient v0.7.0
 	github.com/spf13/cobra v1.8.1

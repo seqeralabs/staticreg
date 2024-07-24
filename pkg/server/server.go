@@ -7,7 +7,6 @@ import (
 
 	"github.com/gin-contrib/cache"
 	"github.com/gin-contrib/cache/persistence"
-	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 )
 
@@ -29,9 +28,7 @@ func New(bindAddr string, serverImpl ServerImpl, log *slog.Logger) (*Server, err
 
 	r := gin.New()
 
-	store := persistence.NewInMemoryStore(time.Second)
-
-	r.Use(gzip.Gzip(gzip.DefaultCompression))
+	store := persistence.NewInMemoryStore(time.Minute * 10)
 	r.Use(injectLoggerMiddleware(log))
 
 	r.NoRoute(serverImpl.NoRouteHandler)
