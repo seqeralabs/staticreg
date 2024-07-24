@@ -34,7 +34,6 @@ var serveCmd = &cobra.Command{
 		filler := filler.New(rc, rootCfg.RegistryHostname, "/")
 
 		regServer := staticreg.New(rc, filler, rootCfg.RegistryHostname)
-		// TODO: make bind addr configurable
 		srv, err := server.New(bindAddr, regServer, log, cacheDuration)
 		if err != nil {
 			return err
