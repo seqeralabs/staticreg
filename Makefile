@@ -26,6 +26,8 @@ clean:
 _output/deps:
 	mkdir -p $@
 
+NO_REBUILD_CSS ?= 0
+ifeq ($(NO_REBUILD_CSS),0)
 _output/deps/tailwindcss: _output/deps
 	curl -o $@ -sLO $(TAILWIND_DOWNLOAD_URL)
 	echo "$(TAILWINDCSS_SHA256SUM)  $@" | $(SHA256SUM_CMD) --check
@@ -40,3 +42,4 @@ deps: _output/deps/tailwindcss
 
 static/css/output.css: $(GO_FILES) ./static/css/input.css _output/deps/tailwindcss
 	_output/deps/tailwindcss ./static/css/input.css -o $@
+endif
