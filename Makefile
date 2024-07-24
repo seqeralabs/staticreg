@@ -38,5 +38,5 @@ deps: _output/deps/tailwindcss
 	go mod verify
 
 
-static/css/output.css:  $(GO_FILES) ./static/css/input.css _output/deps/tailwindcss
+static/css/output.css: $(GO_FILES) ./static/css/input.css _output/deps/tailwindcss
 	_output/deps/tailwindcss ./static/css/input.css -o $@
