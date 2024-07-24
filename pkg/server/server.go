@@ -23,12 +23,17 @@ type ServerImpl interface {
 	CSSHandler(ctx *gin.Context)
 }
 
-func New(bindAddr string, serverImpl ServerImpl, log *slog.Logger) (*Server, error) {
+func New(
+	bindAddr string,
+	serverImpl ServerImpl,
+	log *slog.Logger,
+	cacheDuration time.Duration,
+) (*Server, error) {
 	gin.SetMode(gin.ReleaseMode)
 
 	r := gin.New()
 
-	store := persistence.NewInMemoryStore(time.Minute * 10)
+	store := persistence.NewInMemoryStore(cacheDuration)
 	r.Use(injectLoggerMiddleware(log))
 
 	r.NoRoute(serverImpl.NoRouteHandler)
@@ -36,8 +41,8 @@ func New(bindAddr string, serverImpl ServerImpl, log *slog.Logger) (*Server, err
 
 	r.GET("/static/style.css", serverImpl.CSSHandler)
 
-	r.GET("/", cache.CachePage(store, time.Minute, serverImpl.RepositoriesListHandler))
-	r.GET("/repo/*slug", cache.CachePage(store, time.Minute, serverImpl.RepositoryHandler))
+	r.GET("/", cache.CachePage(store, cacheDuration, serverImpl.RepositoriesListHandler))
+	r.GET("/repo/*slug", cache.CachePage(store, cacheDuration, serverImpl.RepositoryHandler))
 
 	srv := &http.Server{
 		Handler: r,
