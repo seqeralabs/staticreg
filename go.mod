@@ -3,6 +3,7 @@ module github.com/seqeralabs/staticreg
 go 1.22.2
 
 require (
+	github.com/breml/rootcerts v0.2.17
 	github.com/gin-contrib/cache v1.3.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/regclient/regclient v0.7.0

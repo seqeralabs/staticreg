@@ -17,8 +17,16 @@ spec:
       restartPolicy: Always
       containers:
         - name: staticreg
-          image: public.cr.seqera.io/seqeralabs/staticreg:sha-4ab3089
-          command: ["/staticreg", "serve", "--cache-duration", "1m"]
+          image: public.cr.seqera.io/seqeralabs/staticreg:sha-1061081
+          command:
+            [
+              "/staticreg",
+              "serve",
+              "--cache-duration",
+              "1m",
+              "--tls-enable",
+              "--json-logging",
+            ]
           ports:
             - containerPort: 8093
           resources:
@@ -26,11 +34,11 @@ spec:
               memory: "250Mi"
               cpu: "1000m"
           env:
-            - name: REGISTRY_USERNAME
+            - name: REGISTRY_USER
               valueFrom:
                 secretKeyRef:
                   name: registry-credentials
-                  key: REGISTRY_USERNAME
+                  key: REGISTRY_USER
             - name: REGISTRY_PASSWORD
               valueFrom:
                 secretKeyRef:

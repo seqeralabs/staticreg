@@ -53,7 +53,7 @@ Create a secret with the registry details (the registry you want to list images 
 
 ```bash
 kubectl create secret generic registry-credentials \
-  --from-literal=REGISTRY_USERNAME=<username> \
+  --from-literal=REGISTRY_USER=<username> \
   --from-literal=REGISTRY_PASSWORD=<password> \
   --from-literal=REGISTRY_HOSTNAME=<hostname>
 ```

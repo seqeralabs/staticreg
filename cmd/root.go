@@ -7,6 +7,8 @@ import (
 	"github.com/seqeralabs/staticreg/pkg/cfg"
 	"github.com/seqeralabs/staticreg/pkg/observability/logger"
 	"github.com/spf13/cobra"
+
+	_ "github.com/breml/rootcerts"
 )
 
 var rootCfg *cfg.Root = &cfg.Root{}
