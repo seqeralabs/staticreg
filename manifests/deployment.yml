@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: staticreg
+  labels:
+    app: staticreg
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: staticreg
+  template:
+    metadata:
+      labels:
+        app: staticreg
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: staticreg
+          image: public.cr.seqera.io/seqeralabs/staticreg:sha-4ab3089
+          command: ["/staticreg", "serve", "--cache-duration", "1m"]
+          ports:
+            - containerPort: 8093
+          resources:
+            limits:
+              memory: "250Mi"
+              cpu: "1000m"
+          env:
+            - name: REGISTRY_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: registry-credentials
+                  key: REGISTRY_USERNAME
+            - name: REGISTRY_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: registry-credentials
+                  key: REGISTRY_PASSWORD
+            - name: REGISTRY_HOSTNAME
+              valueFrom:
+                secretKeyRef:
+                  name: registry-credentials
+                  key: REGISTRY_HOSTNAME

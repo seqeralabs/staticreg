@@ -45,3 +45,21 @@ make clean
 ARCH=amd64
 make DEBUG=0 GO="docker run -e GOARCH=$ARCH -v $PWD:/staticreg -w /staticreg --rm docker.io/golang:1.22 go"
 ```
+
+
+## Install on Kubernetes
+
+Create a secret with the registry details (the registry you want to list images for)
+
+```bash
+kubectl create secret generic registry-credentials \
+  --from-literal=REGISTRY_USERNAME=<username> \
+  --from-literal=REGISTRY_PASSWORD=<password> \
+  --from-literal=REGISTRY_HOSTNAME=<hostname>
+```
+
+Create the staticreg deployment
+
+```
+kubectl apply -f manifests/deployment.yml
+```

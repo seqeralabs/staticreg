@@ -45,7 +45,12 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVar(&rootCfg.RegistryHostname, "registry", "localhost:5000", "registry hostname")
+	defaultRegistry := "localhost:5000"
+	envRegistry := os.Getenv("REGISTRY_HOSTNAME")
+	if len(envRegistry) > 0 {
+		defaultRegistry = envRegistry
+	}
+	rootCmd.PersistentFlags().StringVar(&rootCfg.RegistryHostname, "registry", defaultRegistry, "registry hostname, can be set via the env var REGISTRY_HOSTNAME as well")
 	rootCmd.PersistentFlags().StringVar(&rootCfg.RegistryUser, "user", os.Getenv("REGISTRY_USER"), "registry user to use for authentication against the provided registry, can be set via the env var REGISTRY_USER as well")
 	rootCmd.PersistentFlags().StringVar(&rootCfg.RegistryPassword, "password", os.Getenv("REGISTRY_PASSWORD"), "registry password to use for authentication against the provided registry, can be set via the env var REGISTRY_PASSWORD as well")
 	rootCmd.PersistentFlags().BoolVar(&rootCfg.SkipTLSVerify, "skip-tls-verify", false, "disable TLS certificate checks")
