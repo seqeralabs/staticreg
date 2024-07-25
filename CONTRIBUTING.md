@@ -37,22 +37,21 @@ make RELEASE_BUILD=1 GORELEASER_CMD="docker run -v $PWD:/staticreg -w /staticreg
 Export a `GITHUB_TOKEN`, generate it from [here](https://github.com/settings/tokens/new?scopes=repo,write:packages) with `write:packages` permissions.
 
 
-**Release a snapshot version**
+
+**Release**
+
+Bump version in the `VERSION` file (this needs to be a [semver](https://semver.org/) numbers)
 
 ```bash
-make release-snapshot
-```
-
-**Release a final version**
-
-Bump version in the `VERSION` file
-
-```bash
+git checkout master
 echo "<new version>" > VERSION
+git commit -am "release: v$(cat VERSION)"
+git push
 ```
 
-Then
+Then you can either release:
 
 ```bash
 make release
 ```
+

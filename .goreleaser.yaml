@@ -31,3 +31,4 @@ changelog:
       - "^test:"
       - "^chore:"
       - "^build:"
+      - "^wip"
