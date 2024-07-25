@@ -16,19 +16,17 @@ A tool to generate a static website from an OCI registry that supports the `/v2/
 
 :white_check_mark: Images list page<br>
 :white_check_mark: Image tags list page<br>
-:white_check_mark: Static website or HTTP webserver with cache 
+:white_check_mark: Static website or HTTP webserver with cache
 
 <img alt="staticreg screenshot" src="docs/_static/screenshot.png">
 
-
 ## Install staticreg
 
-You can install staticreg only via `go install` for now 
+You can install staticreg only via `go install` for now
 
 ```
 go install github.com/seqeralabs/staticreg
 ```
-
 
 Alternatively, you can run staticreg in your **Container runtime** or **Kubernetes cluster**, please see the sections below.
 
@@ -37,13 +35,13 @@ Alternatively, you can run staticreg in your **Container runtime** or **Kubernet
 ### Generate a static website `staticreg`
 
 ```bash
-./staticreg generate
+staticreg generate
 ```
 
 ### Serve the website directly
 
 ```bash
-./staticreg serve
+staticreg serve
 ```
 
 ### Run with Docker
@@ -68,7 +66,6 @@ Create the staticreg deployment
 ```
 kubectl apply -f manifests/deployment.yml
 ```
-
 
 ## Contributing
 
