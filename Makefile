@@ -11,7 +11,7 @@ TAILWIND_DOWNLOAD_URL ?= https://github.com/tailwindlabs/tailwindcss/releases/do
 TAILWINDCSS_SHA256SUM ?= 0948afc4cd6b25fa7970cd5336411495d004ecf672e8654b149883e09bb85db5
 
 GO_FILES := $(shell find . -type f \( -name '*.go' -o -name '*.html' -o -name '*.css' \) -not -name '*_test.go')
-VERSION_FILE = VERSION
+VERSION = $(shell cat VERSION)
 
 RELEASE_BUILD ?= 0
 ifeq ($(RELEASE_BUILD),0)
@@ -51,10 +51,6 @@ endif
 
 .PHONY: release
 release:
-	git tag -a v$(cat $(VERSION_FILE) -m "v$(cat VERSION_FILE)"
-	git push origin v$(VERSION_FILE)
-	$(GORELEASER) release
-
-.PHONY: release-snapshot
-release-snapshot:
-	$(GORELEASER) release --snapshot
+	git tag -a "v$(VERSION)" -m "v$(VERSION)"
+	git push origin v$(VERSION)
+	$(GORELEASER_CMD) release --clean --fail-fast
