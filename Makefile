@@ -2,26 +2,14 @@ SHA256SUM_CMD ?= sha256sum
 
 GORELEASER_CMD ?= goreleaser
 
-
- ifeq (, $(shell which $(GORELEASER_CMD)))
- 	$(error "goreleaser is not installed. Install it via go install github.com/goreleaser/goreleaser/v2@latest")
- endif
-
 TAILWIND_DOWNLOAD_URL ?= https://github.com/tailwindlabs/tailwindcss/releases/download/v3.4.6/tailwindcss-linux-x64
 TAILWINDCSS_SHA256SUM ?= 0948afc4cd6b25fa7970cd5336411495d004ecf672e8654b149883e09bb85db5
 
 GO_FILES := $(shell find . -type f \( -name '*.go' -o -name '*.html' -o -name '*.css' \) -not -name '*_test.go')
 VERSION = $(shell cat VERSION)
 
-RELEASE_BUILD ?= 0
-ifeq ($(RELEASE_BUILD),0)
-GORELEASER_BUILD_FLAGS = --single-target --snapshot --clean --output _output/dist/statireg
-else
-GORELEASER_BUILD_FLAGS = --clean
-endif
-
 _output/dist: $(VERSION_FILE) $(GO_FILES) static/css/output.css
-	$(GORELEASER_CMD) build $(GORELEASER_BUILD_FLAGS)
+	$(GORELEASER_CMD) build --single-target --snapshot --clean --output _output/dist/staticreg
 
 .PHONY: clean
 clean:
