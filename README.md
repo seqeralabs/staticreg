@@ -43,7 +43,7 @@ staticreg serve
 ### Run with Docker
 
 ```bash
-docker run --rm -d public.cr.seqera.io/seqeralabs/staticreg:master
+docker run --rm -d public.cr.seqera.io/seqeralabs/staticreg:0.1.0 --registry <registry-url-here>
 ```
 
 ## Install on Kubernetes
