@@ -13,13 +13,13 @@ builds:
 # build container images
 dockers:
   - image_templates:
-      - "public.cr.seqera.io/seqeralabs/staticreg:{{ if .IsSnapshot }}{{.ShortCommit}}-snapshot{{ else }}{{ .Tag }}{{ end }}-amd64"
+      - "public.cr.seqera.io/seqeralabs/staticreg:{{.Tag}}-amd64"
     use: buildx
     build_flag_templates:
       - "--pull"
       - "--platform=linux/amd64"
   - image_templates:
-      - "public.cr.seqera.io/seqeralabs/staticreg:{{ if .IsSnapshot }}{{.ShortCommit}}-snapshot{{ else }}{{ .Tag }}{{ end }}-arm64"
+      - "public.cr.seqera.io/seqeralabs/staticreg:{{.Tag}}-arm64"
     use: buildx
     build_flag_templates:
       - "--pull"
@@ -28,10 +28,10 @@ dockers:
 
 # merge multi arch image manifests
 docker_manifests:
-  - name_template: "public.cr.seqera.io/seqeralabs/staticreg:{{ if .IsSnapshot }}{{.ShortCommit}}-snapshot{{ else }}{{ .Tag }}{{ end }}"
+  - name_template: "public.cr.seqera.io/seqeralabs/staticreg:{{.Tag}}"
     image_templates:
-      - "public.cr.seqera.io/seqeralabs/staticreg:{{ if .IsSnapshot }}{{.ShortCommit}}-snapshot{{ else }}{{ .Tag }}{{ end }}-amd64"
-      - "public.cr.seqera.io/seqeralabs/staticreg:{{ if .IsSnapshot }}{{.ShortCommit}}-snapshot{{ else }}{{ .Tag }}{{ end }}-arm64"
+      - "public.cr.seqera.io/seqeralabs/staticreg:{{.Tag}}-amd64"
+      - "public.cr.seqera.io/seqeralabs/staticreg:{{.Tag}}-arm64"
 archives:
   - format: tar.gz
     name_template: >-
