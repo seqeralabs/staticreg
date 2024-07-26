@@ -22,13 +22,9 @@ A tool to generate a static website from an OCI registry that supports the `/v2/
 
 ## Install staticreg
 
-You can install staticreg only via `go install` for now
+If you need, you can run staticreg in your **Container runtime** or **Kubernetes cluster**, please see the sections below.
 
-```
-go install github.com/seqeralabs/staticreg
-```
-
-Alternatively, you can run staticreg in your **Container runtime** or **Kubernetes cluster**, please see the sections below.
+However, we also release pre-built binaries for Windows, Linux and MacOS for i386, x86_64 and arm64. Download them from [here](https://github.com/seqeralabs/staticreg/releases/latest).
 
 ## Run staticreg
 
