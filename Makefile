@@ -37,7 +37,6 @@ _output/deps/tailwindcss: _output/deps
 	echo "$(TAILWINDCSS_SHA256SUM)  $@" | $(SHA256SUM_CMD) --check
 	chmod +x $@
 
-
 tools:
 .PHONY: deps
 deps:
@@ -54,3 +53,7 @@ release:
 	git tag -a "v$(VERSION)" -m "v$(VERSION)"
 	git push origin v$(VERSION)
 	$(GORELEASER_CMD) release --clean --fail-fast
+
+.PHONY: snapshot
+snapshot:
+	$(GORELEASER_CMD) release --snapshot  --clean

@@ -4,8 +4,8 @@ on:
   push:
     branches:
       - master
-    tags:
-      - "v*.*.*"
+    # tags:
+    #   - "v*.*.*"
 jobs:
   buildx:
     runs-on: ubuntu-latest
@@ -23,26 +23,5 @@ jobs:
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: |
-            public.cr.seqera.io/seqeralabs/staticreg
-          tags: |
-            type=schedule
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=sha
-      - name: Build image and push
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          platforms: linux/arm64,linux/amd64
-          build-args: "GO_IMAGE=docker.io/golang:1.22"
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+      - name: Build snapshot
+        run: make snapshot

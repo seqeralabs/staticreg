@@ -2,6 +2,7 @@ version: 2
 
 dist: _output/dist
 
+# build binaries
 builds:
   - env:
       - CGO_ENABLED=0
@@ -9,7 +10,28 @@ builds:
       - linux
       - windows
       - darwin
+# build container images
+dockers:
+  - image_templates:
+      - "public.cr.seqera.io/seqeralabs/staticreg:{{ if .IsSnapshot }}{{.ShortCommit}}-snapshot{{ else }}{{ .Tag }}{{ end }}-amd64"
+    use: buildx
+    build_flag_templates:
+      - "--pull"
+      - "--platform=linux/amd64"
+  - image_templates:
+      - "public.cr.seqera.io/seqeralabs/staticreg:{{ if .IsSnapshot }}{{.ShortCommit}}-snapshot{{ else }}{{ .Tag }}{{ end }}-arm64"
+    use: buildx
+    build_flag_templates:
+      - "--pull"
+      - "--platform=linux/arm64"
+    goarch: arm64
 
+# merge multi arch image manifests
+docker_manifests:
+  - name_template: "public.cr.seqera.io/seqeralabs/staticreg:{{ if .IsSnapshot }}{{.ShortCommit}}-snapshot{{ else }}{{ .Tag }}{{ end }}"
+    image_templates:
+      - "public.cr.seqera.io/seqeralabs/staticreg:{{ if .IsSnapshot }}{{.ShortCommit}}-snapshot{{ else }}{{ .Tag }}{{ end }}-amd64"
+      - "public.cr.seqera.io/seqeralabs/staticreg:{{ if .IsSnapshot }}{{.ShortCommit}}-snapshot{{ else }}{{ .Tag }}{{ end }}-arm64"
 archives:
   - format: tar.gz
     name_template: >-
