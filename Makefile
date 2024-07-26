@@ -38,9 +38,8 @@ endif
 
 .PHONY: release
 release:
-	git tag -a "v$(VERSION)" -m "v$(VERSION)"
-	git push origin v$(VERSION)
-	$(GORELEASER_CMD) release --clean --fail-fast
+	git tag -a "$(VERSION)" -m "$(VERSION)"
+	git push origin $(VERSION)
 
 .PHONY: snapshot
 snapshot:

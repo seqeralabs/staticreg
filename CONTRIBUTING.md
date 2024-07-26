@@ -37,26 +37,31 @@ make
 ```
 
 
-## Manual Release to GitHub
+## Release
+Releasing is done via GitHub actions.
 
-**NB**: This is only done manually in case the GH action does not work.
+To release you need to:
 
-Export a `GITHUB_TOKEN`, generate it from [here](https://github.com/settings/tokens/new?scopes=repo,write:packages) with `write:packages` permissions.
+- Bump version in the `VERSION` file (this needs to be a [semver](https://semver.org/) numbers)
+- Commit the version file
+- Start the release process
 
 
-
-**Release**
-
-Bump version in the `VERSION` file (this needs to be a [semver](https://semver.org/) numbers)
-
+**Bump version file**
 ```bash
 git checkout master
 echo "<new version>" > VERSION
+```
+
+**Commit the version file**
+```bash
 git commit -am "release: v$(cat VERSION)"
 git push
 ```
 
-Then you can either release:
+
+
+**Start the release process**
 
 ```bash
 make release
