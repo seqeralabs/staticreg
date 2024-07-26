@@ -1,5 +1,12 @@
 # Contributing to staticreg
 
+To contribute you need
+
+- [goreleaser](https://goreleaser.com/install/): This is the tool we use to build and release staticreg, used by GNU Make to compile the project
+- [Go >= 1.22.2](https://go.dev/): The Go compiler, used by goreleaser to build binaries
+- [GNU Make](https://www.gnu.org/software/make/): we use make to hide the details of running multiple commands to get builds done
+- Optional: [Docker](https://docs.docker.com/desktop/install/linux-install/): to build container images and for running the local development dependencies
+
 Start a local Registry and push an image to it
 
 ```bash
@@ -22,11 +29,11 @@ Start staticreg
 ./_output/dist/staticreg serve
 ```
 
-## Release build (without releasing)
+## Build (without releasing)
 
 ```bash
 make clean
-make RELEASE_BUILD=1 GORELEASER_CMD="docker run -v $PWD:/staticreg -w /staticreg --rm --privileged docker.io/goreleaser/goreleaser:v2.1.0"
+make
 ```
 
 
