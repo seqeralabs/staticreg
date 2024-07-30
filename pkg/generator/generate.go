@@ -22,34 +22,31 @@ import (
 	"os"
 	"path"
 
-	"github.com/regclient/regclient"
 	"github.com/seqeralabs/staticreg/pkg/filler"
 	"github.com/seqeralabs/staticreg/pkg/observability/logger"
+	"github.com/seqeralabs/staticreg/pkg/registry"
 	"github.com/seqeralabs/staticreg/pkg/templates"
 	"github.com/seqeralabs/staticreg/static"
 )
 
 type Generator struct {
-	rc               *regclient.RegClient
-	filler           *filler.Filler
-	absoluteDir      string
-	registryHostname string
-	baseDir          string
+	regClient   *registry.Client
+	filler      *filler.Filler
+	absoluteDir string
+	baseDir     string
 }
 
 func New(
-	rc *regclient.RegClient,
+	regClient *registry.Client,
 	filler *filler.Filler,
 	absoluteDir string,
-	registryHostname string,
 	baseDir string,
 ) *Generator {
 	return &Generator{
-		rc:               rc,
-		absoluteDir:      absoluteDir,
-		registryHostname: registryHostname,
-		baseDir:          baseDir,
-		filler:           filler,
+		regClient:   regClient,
+		absoluteDir: absoluteDir,
+		baseDir:     baseDir,
+		filler:      filler,
 	}
 }
 
@@ -84,9 +81,13 @@ func (g *Generator) Generate(
 		return err
 	}
 
-	repos, err := g.rc.RepoList(ctx, g.registryHostname)
+	repos, err := g.regClient.RepoList(ctx)
 	if err != nil {
 		return err
+	}
+
+	if repos == nil {
+		return nil
 	}
 
 	for _, repo := range repos.Repositories {
@@ -140,20 +141,22 @@ func (g *Generator) generateIndex(
 	repositoriesData := []templates.RepositoryData{}
 
 	baseData := g.filler.BaseData()
-	repos, err := g.rc.RepoList(ctx, g.registryHostname)
+	repos, err := g.regClient.RepoList(ctx)
 	if err != nil {
 		return err
 	}
 
-	for _, repo := range repos.Repositories {
-		repoData, err := g.filler.RepoData(ctx, repo)
-		if err != nil {
-			log.Warn("could not retrieve repo data", slog.String("repo", repo), logger.ErrAttr(err))
+	if repos != nil {
+		for _, repo := range repos.Repositories {
+			repoData, err := g.filler.RepoData(ctx, repo)
+			if err != nil {
+				log.Warn("could not retrieve repo data", slog.String("repo", repo), logger.ErrAttr(err))
+			}
+			if repoData == nil {
+				continue
+			}
+			repositoriesData = append(repositoriesData, *repoData)
 		}
-		if repoData == nil {
-			continue
-		}
-		repositoriesData = append(repositoriesData, *repoData)
 	}
 
 	return templates.RenderIndex(w, templates.IndexData{

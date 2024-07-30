@@ -43,11 +43,11 @@ var serveCmd = &cobra.Command{
 			slog.String("bind-addr", bindAddr),
 		)
 
-		rc := registry.ClientFromConfig(*rootCfg)
+		client := registry.New(rootCfg)
 
-		filler := filler.New(rc, rootCfg.RegistryHostname, "/")
+		filler := filler.New(client, rootCfg.RegistryHostname, "/")
 
-		regServer := staticreg.New(rc, filler, rootCfg.RegistryHostname)
+		regServer := staticreg.New(client, filler, rootCfg.RegistryHostname)
 		srv, err := server.New(bindAddr, regServer, log, cacheDuration)
 		if err != nil {
 			return err

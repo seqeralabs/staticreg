@@ -15,12 +15,18 @@
 package registry
 
 import (
+	"context"
+
 	"github.com/regclient/regclient"
 	"github.com/regclient/regclient/config"
+	"github.com/regclient/regclient/types/blob"
+	"github.com/regclient/regclient/types/ref"
+	"github.com/regclient/regclient/types/repo"
+	"github.com/regclient/regclient/types/tag"
 	"github.com/seqeralabs/staticreg/pkg/cfg"
 )
 
-func hostFromConfig(rootCfg cfg.Root) config.Host {
+func hostFromConfig(rootCfg *cfg.Root) config.Host {
 	regHost := config.Host{
 		Name:     rootCfg.RegistryHostname,
 		Hostname: rootCfg.RegistryHostname,
@@ -39,10 +45,37 @@ func hostFromConfig(rootCfg cfg.Root) config.Host {
 	return regHost
 }
 
-func ClientFromConfig(rootCfg cfg.Root) *regclient.RegClient {
+type Client struct {
+	regHost       config.Host
+	catalogClient *regclient.RegClient
+	pullClient    *regclient.RegClient
+}
+
+func (c *Client) RepoList(ctx context.Context) (*repo.RepoList, error) {
+	return c.catalogClient.RepoList(ctx, c.regHost.Hostname)
+}
+
+func (c *Client) TagList(ctx context.Context, r ref.Ref) (*tag.List, error) {
+	return c.pullClient.TagList(ctx, r)
+}
+
+func (c *Client) ImageConfig(ctx context.Context, r ref.Ref) (*blob.BOCIConfig, error) {
+	return c.pullClient.ImageConfig(ctx, r)
+}
+
+func New(rootCfg *cfg.Root) *Client {
 	regHost := hostFromConfig(rootCfg)
-	return regclient.New(
+	catalogClient := regclient.New(
 		regclient.WithConfigHost(regHost),
 		regclient.WithUserAgent("seqera/staticreg"),
 	)
+	pullClient := regclient.New(
+		regclient.WithConfigHost(regHost),
+		regclient.WithUserAgent("seqera/staticreg"),
+	)
+	return &Client{
+		catalogClient: catalogClient,
+		pullClient:    pullClient,
+		regHost:       regHost,
+	}
 }

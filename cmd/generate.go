@@ -37,7 +37,7 @@ var generateCmd = &cobra.Command{
 		ctx := cmd.Context()
 		log := logger.FromContext(ctx)
 
-		rc := registry.ClientFromConfig(*rootCfg)
+		client := registry.New(rootCfg)
 
 		sanitizedAbsoluteDir := sanitizeAbsoluteDirPath(absoluteDir)
 		log.Info("generating static website",
@@ -45,9 +45,9 @@ var generateCmd = &cobra.Command{
 			slog.String("absolute-dir", sanitizedAbsoluteDir),
 		)
 
-		filler := filler.New(rc, rootCfg.RegistryHostname, sanitizedAbsoluteDir)
-		gen := generator.New(rc, filler, sanitizedAbsoluteDir, rootCfg.RegistryHostname, outputDirectory)
-		return gen.Generate(cmd.Context())
+		filler := filler.New(client, rootCfg.RegistryHostname, sanitizedAbsoluteDir)
+		gen := generator.New(client, filler, sanitizedAbsoluteDir, outputDirectory)
+		return gen.Generate(ctx)
 
 	},
 }
