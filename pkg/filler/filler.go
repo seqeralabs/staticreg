@@ -22,23 +22,23 @@ import (
 	"sort"
 	"time"
 
-	"github.com/regclient/regclient"
 	"github.com/regclient/regclient/types/errs"
 	"github.com/regclient/regclient/types/ref"
 	"github.com/seqeralabs/staticreg/pkg/observability/logger"
+	"github.com/seqeralabs/staticreg/pkg/registry"
 	"github.com/seqeralabs/staticreg/pkg/templates"
 )
 
 type Filler struct {
 	registryHostname string
 	absoluteDir      string
-	rc               *regclient.RegClient
+	regClient        *registry.Client
 }
 
-func New(rc *regclient.RegClient, registryHostname string, absoluteDir string) *Filler {
+func New(regClient *registry.Client, registryHostname string, absoluteDir string) *Filler {
 	return &Filler{
 		absoluteDir:      absoluteDir,
-		rc:               rc,
+		regClient:        regClient,
 		registryHostname: registryHostname,
 	}
 }
@@ -50,7 +50,7 @@ func (f *Filler) TagData(ctx context.Context, repo string, tag string) (*templat
 		return nil, err
 	}
 
-	imageConfig, err := f.rc.ImageConfig(ctx, tagRef)
+	imageConfig, err := f.regClient.ImageConfig(ctx, tagRef)
 	if err != nil {
 		return nil, err
 	}
@@ -84,11 +84,15 @@ func (f *Filler) RepoData(ctx context.Context, repo string) (*templates.Reposito
 		return nil, err
 	}
 
-	tagList, err := f.rc.TagList(ctx, repoRef)
+	tagList, err := f.regClient.TagList(ctx, repoRef)
 	if err != nil {
 		if errors.Is(err, errs.ErrNotFound) {
 			return nil, nil
 		}
+	}
+	if tagList == nil {
+		log.Warn("tag list is nil")
+		return nil, nil
 	}
 
 	for _, tag := range tagList.Tags {

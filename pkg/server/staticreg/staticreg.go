@@ -21,10 +21,10 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/regclient/regclient"
 	"github.com/regclient/regclient/types/errs"
 	"github.com/seqeralabs/staticreg/pkg/filler"
 	"github.com/seqeralabs/staticreg/pkg/observability/logger"
+	"github.com/seqeralabs/staticreg/pkg/registry"
 	"github.com/seqeralabs/staticreg/pkg/templates"
 	"github.com/seqeralabs/staticreg/static"
 
@@ -32,18 +32,18 @@ import (
 )
 
 type StaticregServer struct {
-	rc               *regclient.RegClient
+	regClient        *registry.Client
 	dataFiller       *filler.Filler
 	registryHostname string
 }
 
 func New(
-	rc *regclient.RegClient,
+	regClient *registry.Client,
 	dataFiller *filler.Filler,
 	registryHostname string,
 ) *StaticregServer {
 	return &StaticregServer{
-		rc:               rc,
+		regClient:        regClient,
 		dataFiller:       dataFiller,
 		registryHostname: registryHostname,
 	}
@@ -55,21 +55,24 @@ func (s *StaticregServer) RepositoriesListHandler(c *gin.Context) {
 	repositoriesData := []templates.RepositoryData{}
 	baseData := s.dataFiller.BaseData()
 
-	repos, err := s.rc.RepoList(c, s.registryHostname)
+	repos, err := s.regClient.RepoList(c)
 	if err != nil {
 		_ = c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
-	for _, repo := range repos.Repositories {
-		repoData, err := s.dataFiller.RepoData(c, repo)
-		if err != nil {
-			log.Warn("could not retrieve repo data", slog.String("repo", repo), logger.ErrAttr(err))
+	if repos != nil {
+		for _, repo := range repos.Repositories {
+			repoData, err := s.dataFiller.RepoData(c, repo)
+			if err != nil {
+				log.Warn("could not retrieve repo data", slog.String("repo", repo), logger.ErrAttr(err))
+				continue
+			}
+			if repoData == nil {
+				continue
+			}
+			repositoriesData = append(repositoriesData, *repoData)
 		}
-		if repoData == nil {
-			continue
-		}
-		repositoriesData = append(repositoriesData, *repoData)
 	}
 
 	err = templates.RenderIndex(c.Writer, templates.IndexData{
