@@ -1,12 +1,12 @@
 package server
 
 import (
+	cache "github.com/chenyahui/gin-cache"
 	"log/slog"
 	"net/http"
 	"time"
 
-	"github.com/gin-contrib/cache"
-	"github.com/gin-contrib/cache/persistence"
+	"github.com/chenyahui/gin-cache/persist"
 	"github.com/gin-gonic/gin"
 )
 
@@ -34,17 +34,20 @@ func New(
 
 	r := gin.New()
 	r.Use(gin.Recovery())
-	store := persistence.NewInMemoryStore(cacheDuration)
+	store := persist.NewMemoryStore(cacheDuration)
 	r.Use(injectLoggerMiddleware(log))
-
 	r.NoRoute(serverImpl.NoRouteHandler)
 	r.Use(serverImpl.NotFoundHandler)
 	r.Use(serverImpl.InternalServerErrorHandler)
 
 	r.GET("/static/style.css", serverImpl.CSSHandler)
 
-	r.GET("/", cache.CachePage(store, cacheDuration, serverImpl.RepositoriesListHandler))
-	r.GET("/repo/*slug", cache.CachePage(store, cacheDuration, serverImpl.RepositoryHandler))
+	htmlRoutes := r.Group("/")
+	{
+		r.GET("/", cache.CacheByRequestURI(store, cacheDuration), serverImpl.RepositoriesListHandler)
+		r.GET("/repo/*slug", cache.CacheByRequestURI(store, cacheDuration), serverImpl.RepositoryHandler)
+	}
+	htmlRoutes.Use(htmlContentTypeMiddleware)
 
 	srv := &http.Server{
 		Handler: r,
@@ -66,4 +69,8 @@ func injectLoggerMiddleware(log *slog.Logger) gin.HandlerFunc {
 		c.Set("logger", log)
 		c.Next()
 	}
+}
+
+func htmlContentTypeMiddleware(ctx *gin.Context) {
+	ctx.Writer.Header().Set("Content-Type", "text/html; charset=utf-8")
 }
