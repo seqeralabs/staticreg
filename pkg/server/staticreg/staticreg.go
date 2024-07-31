@@ -15,6 +15,7 @@
 package staticreg
 
 import (
+	"bytes"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -50,6 +51,7 @@ func New(
 }
 
 func (s *StaticregServer) RepositoriesListHandler(c *gin.Context) {
+
 	log := logger.FromContext(c)
 
 	repositoriesData := []templates.RepositoryData{}
@@ -75,7 +77,8 @@ func (s *StaticregServer) RepositoriesListHandler(c *gin.Context) {
 		}
 	}
 
-	err = templates.RenderIndex(c.Writer, templates.IndexData{
+	var buf bytes.Buffer
+	err = templates.RenderIndex(&buf, templates.IndexData{
 		BaseData:     baseData,
 		Repositories: repositoriesData,
 	})
@@ -86,13 +89,19 @@ func (s *StaticregServer) RepositoriesListHandler(c *gin.Context) {
 	}
 
 	c.Status(http.StatusOK)
+	_, err = buf.WriteTo(c.Writer)
+	if err != nil {
+		c.Error(err)
+		return
+	}
 }
 
 func (s *StaticregServer) RepositoryHandler(c *gin.Context) {
+
 	slug := c.Param("slug")
 
 	if len(slug) == 1 {
-		_ = c.AbortWithError(http.StatusBadRequest, servererrors.ErrSlugTooShort)
+		_ = c.AbortWithError(http.StatusNotFound, servererrors.ErrSlugTooShort)
 		return
 	}
 
@@ -101,7 +110,7 @@ func (s *StaticregServer) RepositoryHandler(c *gin.Context) {
 	repoData, err := s.dataFiller.RepoData(c, slug)
 	if err != nil {
 		if errors.Is(err, errs.ErrInvalidReference) {
-			_ = c.AbortWithError(http.StatusBadRequest, err)
+			_ = c.AbortWithError(http.StatusNotFound, err)
 			return
 		}
 		_ = c.AbortWithError(http.StatusInternalServerError, err)
@@ -112,14 +121,19 @@ func (s *StaticregServer) RepositoryHandler(c *gin.Context) {
 		return
 	}
 
-	err = templates.RenderRepository(c.Writer, *repoData)
+	var buf bytes.Buffer
+	err = templates.RenderRepository(&buf, *repoData)
 	if err != nil {
 		_ = c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 
 	c.Status(http.StatusOK)
-
+	_, err = buf.WriteTo(c.Writer)
+	if err != nil {
+		c.Error(err)
+		return
+	}
 }
 
 func (s *StaticregServer) NotFoundHandler(c *gin.Context) {
@@ -132,9 +146,18 @@ func (s *StaticregServer) NotFoundHandler(c *gin.Context) {
 		return
 	}
 	baseData := s.dataFiller.BaseData()
-	err := templates.Render404(c.Writer, baseData)
+
+	var buf bytes.Buffer
+	err := templates.Render404(&buf, baseData)
 	if err != nil {
 		_ = c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	_, err = buf.WriteTo(c.Writer)
+	if err != nil {
+		c.Error(err)
+		return
 	}
 }
 
@@ -143,26 +166,37 @@ func (s *StaticregServer) InternalServerErrorHandler(c *gin.Context) {
 	if len(c.Errors) == 0 {
 		return
 	}
+	log := logger.FromContext(c)
+
+	if len(c.Errors) > 0 &&
+		c.Writer.Status() != http.StatusInternalServerError &&
+		c.Writer.Status() != http.StatusNotFound &&
+		c.Writer.Status() != http.StatusBadRequest {
+		log.Error("handler error without error status code", slog.Any("errors", c.Errors))
+		return
+	}
 
 	if c.Writer.Status() != http.StatusInternalServerError {
 		return
 	}
-	log := logger.FromContext(c)
+
 	baseData := s.dataFiller.BaseData()
+
 	err := templates.Render500(c.Writer, baseData)
 	if err != nil {
-		log.Error("error rendering error page", logger.ErrAttr(c.AbortWithError(http.StatusInternalServerError, err)))
+		c.Error(err)
 	}
 
 	log.Error("internal server error", slog.Any("errors", c.Errors))
-
 }
 
 func (s *StaticregServer) NoRouteHandler(c *gin.Context) {
 	baseData := s.dataFiller.BaseData()
+
 	err := templates.Render404(c.Writer, baseData)
 	if err != nil {
-		_ = c.AbortWithError(http.StatusInternalServerError, err)
+		c.Error(err)
+		return
 	}
 }
 
@@ -170,7 +204,7 @@ func (s *StaticregServer) CSSHandler(c *gin.Context) {
 	c.Writer.Header().Set("Content-Type", "text/css")
 	err := static.RenderStyle(c.Writer)
 	if err != nil {
-		_ = c.AbortWithError(http.StatusInternalServerError, err)
+		c.Error(err)
 		return
 	}
 }

@@ -17,12 +17,32 @@ package templates
 import (
 	"embed"
 	_ "embed"
+	"html/template"
 	"io"
-	"text/template"
+	"path"
 )
 
 //go:embed tmpl/*
 var templates embed.FS
+
+var htmlTemplates map[string]*template.Template
+
+func init() {
+	templateDefs := map[string]string{
+		"index":      "index.html",
+		"repository": "repository.html",
+		"404":        "404.html",
+		"500":        "500.html",
+	}
+	htmlTemplates = make(map[string]*template.Template, len(templateDefs))
+	for tplName, templateDef := range templateDefs {
+		tpl, err := template.New(templateDef).ParseFS(templates, path.Join("tmpl", templateDef))
+		if err != nil {
+			panic(err)
+		}
+		htmlTemplates[tplName] = tpl
+	}
+}
 
 type BaseData struct {
 	AbsoluteDir  string
@@ -36,10 +56,7 @@ type IndexData struct {
 }
 
 func RenderIndex(w io.Writer, data IndexData) error {
-	tpl, err := template.New("index.html").ParseFS(templates, "tmpl/index.html")
-	if err != nil {
-		return err
-	}
+	tpl := htmlTemplates["index"]
 	return tpl.Execute(w, data)
 }
 
@@ -59,25 +76,16 @@ type RepositoryData struct {
 }
 
 func RenderRepository(w io.Writer, data RepositoryData) error {
-	tpl, err := template.New("repository.html").ParseFS(templates, "tmpl/repository.html")
-	if err != nil {
-		return err
-	}
+	tpl := htmlTemplates["repository"]
 	return tpl.Execute(w, data)
 }
 
 func Render404(w io.Writer, data BaseData) error {
-	tpl, err := template.New("404.html").ParseFS(templates, "tmpl/404.html")
-	if err != nil {
-		return err
-	}
+	tpl := htmlTemplates["404"]
 	return tpl.Execute(w, data)
 }
 
 func Render500(w io.Writer, data BaseData) error {
-	tpl, err := template.New("500.html").ParseFS(templates, "tmpl/500.html")
-	if err != nil {
-		return err
-	}
+	tpl := htmlTemplates["500"]
 	return tpl.Execute(w, data)
 }
