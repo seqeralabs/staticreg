@@ -28,8 +28,9 @@ import (
 )
 
 var (
-	bindAddr      string
-	cacheDuration time.Duration
+	bindAddr          string
+	ignoredUserAgents []string
+	cacheDuration     time.Duration
 )
 
 var serveCmd = &cobra.Command{
@@ -41,6 +42,7 @@ var serveCmd = &cobra.Command{
 		log.Info("starting server",
 			slog.Duration("cache-duration", cacheDuration),
 			slog.String("bind-addr", bindAddr),
+			slog.Any("ignored-user-agents", ignoredUserAgents),
 		)
 
 		client := registry.New(rootCfg)
@@ -48,7 +50,7 @@ var serveCmd = &cobra.Command{
 		filler := filler.New(client, rootCfg.RegistryHostname, "/")
 
 		regServer := staticreg.New(client, filler, rootCfg.RegistryHostname)
-		srv, err := server.New(bindAddr, regServer, log, cacheDuration)
+		srv, err := server.New(bindAddr, regServer, log, cacheDuration, ignoredUserAgents)
 		if err != nil {
 			return err
 		}
@@ -59,6 +61,7 @@ var serveCmd = &cobra.Command{
 
 func init() {
 	serveCmd.PersistentFlags().StringVar(&bindAddr, "bind-addr", "127.0.0.1:8093", "server bind address")
+	serveCmd.PersistentFlags().StringArrayVar(&ignoredUserAgents, "ignored-user-agent", []string{}, "user agents to ignore (reply with empty body and 200 OK). A user agent is ignored if it contains the one of the values passed to this flag")
 	serveCmd.PersistentFlags().DurationVar(&cacheDuration, "cache-duration", time.Minute*10, "how long to keep a generated page in cache before expiring it, 0 to never expire")
 	rootCmd.AddCommand(serveCmd)
 }
