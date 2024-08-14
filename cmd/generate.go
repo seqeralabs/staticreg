@@ -21,7 +21,8 @@ import (
 	"github.com/seqeralabs/staticreg/pkg/filler"
 	"github.com/seqeralabs/staticreg/pkg/generator"
 	"github.com/seqeralabs/staticreg/pkg/observability/logger"
-	"github.com/seqeralabs/staticreg/pkg/registry"
+	"github.com/seqeralabs/staticreg/pkg/registry/registry"
+
 	"github.com/spf13/cobra"
 )
 

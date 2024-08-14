@@ -21,7 +21,8 @@ import (
 
 	"github.com/seqeralabs/staticreg/pkg/filler"
 	"github.com/seqeralabs/staticreg/pkg/observability/logger"
-	"github.com/seqeralabs/staticreg/pkg/registry"
+	"github.com/seqeralabs/staticreg/pkg/registry/async"
+	"github.com/seqeralabs/staticreg/pkg/registry/registry"
 	"github.com/seqeralabs/staticreg/pkg/server"
 	"github.com/seqeralabs/staticreg/pkg/server/staticreg"
 	"github.com/spf13/cobra"
@@ -36,7 +37,7 @@ var (
 var serveCmd = &cobra.Command{
 	Use:   "serve",
 	Short: "Serves a webserver with an HTML listing of all images and tags in a v2 registry",
-	RunE: func(cmd *cobra.Command, args []string) error {
+	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
 		log := logger.FromContext(ctx)
 		log.Info("starting server",
@@ -46,16 +47,37 @@ var serveCmd = &cobra.Command{
 		)
 
 		client := registry.New(rootCfg)
+		asyncClient := async.New(client)
 
-		filler := filler.New(client, rootCfg.RegistryHostname, "/")
+		filler := filler.New(asyncClient, rootCfg.RegistryHostname, "/")
 
-		regServer := staticreg.New(client, filler, rootCfg.RegistryHostname)
+		regServer := staticreg.New(asyncClient, filler, rootCfg.RegistryHostname)
 		srv, err := server.New(bindAddr, regServer, log, cacheDuration, ignoredUserAgents)
 		if err != nil {
-			return err
+			slog.Error("error creating server", logger.ErrAttr(err))
+			return
 		}
 
-		return srv.Start()
+		errCh := make(chan error, 1)
+		go func() {
+			errCh <- srv.Start()
+		}()
+
+		go func() {
+			errCh <- asyncClient.Start(ctx)
+		}()
+
+		select {
+		case <-ctx.Done():
+			return
+		case err := <-errCh:
+			if err == nil {
+				slog.Error("operations exited unexpectedly")
+				return
+			}
+			slog.Error("unexpected error", logger.ErrAttr(err))
+			return
+		}
 	},
 }
 

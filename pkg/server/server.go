@@ -6,10 +6,9 @@ import (
 	"strings"
 	"time"
 
-	cache "github.com/chenyahui/gin-cache"
 	sloggin "github.com/samber/slog-gin"
 
-	"github.com/chenyahui/gin-cache/persist"
+	// "github.com/chenyahui/gin-cache/persist"
 	"github.com/gin-gonic/gin"
 )
 
@@ -48,7 +47,7 @@ func New(
 
 	r.Use(sloggin.NewWithConfig(log, lmConfig))
 	r.Use(gin.Recovery())
-	store := persist.NewMemoryStore(cacheDuration)
+	// store := persist.NewMemoryStore(cacheDuration)
 	r.Use(injectLoggerMiddleware(log))
 	r.NoRoute(serverImpl.NoRouteHandler)
 	r.Use(serverImpl.NotFoundHandler)
@@ -61,8 +60,10 @@ func New(
 	r.Use(ignoredUAMiddleware)
 	htmlRoutes := r.Group("/")
 	{
-		r.GET("/", cache.CacheByRequestURI(store, cacheDuration), serverImpl.RepositoriesListHandler)
-		r.GET("/repo/*slug", cache.CacheByRequestURI(store, cacheDuration), serverImpl.RepositoryHandler)
+		// r.GET("/", cache.CacheByRequestURI(store, cacheDuration), serverImpl.RepositoriesListHandler)
+		r.GET("/", serverImpl.RepositoriesListHandler)
+		r.GET("/repo/*slug", serverImpl.RepositoryHandler)
+		// r.GET("/repo/*slug", cache.CacheByRequestURI(store, cacheDuration), serverImpl.RepositoryHandler)
 	}
 	htmlRoutes.Use(htmlContentTypeMiddleware)
 

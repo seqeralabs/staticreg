@@ -17,25 +17,23 @@ package filler
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 	"sort"
 	"time"
 
-	"github.com/regclient/regclient/types/errs"
-	"github.com/regclient/regclient/types/ref"
 	"github.com/seqeralabs/staticreg/pkg/observability/logger"
 	"github.com/seqeralabs/staticreg/pkg/registry"
+	"github.com/seqeralabs/staticreg/pkg/registry/errs"
 	"github.com/seqeralabs/staticreg/pkg/templates"
 )
 
 type Filler struct {
 	registryHostname string
 	absoluteDir      string
-	regClient        *registry.Client
+	regClient        registry.Client
 }
 
-func New(regClient *registry.Client, registryHostname string, absoluteDir string) *Filler {
+func New(regClient registry.Client, registryHostname string, absoluteDir string) *Filler {
 	return &Filler{
 		absoluteDir:      absoluteDir,
 		regClient:        regClient,
@@ -44,23 +42,16 @@ func New(regClient *registry.Client, registryHostname string, absoluteDir string
 }
 
 func (f *Filler) TagData(ctx context.Context, repo string, tag string) (*templates.TagData, error) {
-	tagFullRef := fmt.Sprintf("%s/%s:%s", f.registryHostname, repo, tag)
-	tagRef, err := ref.New(tagFullRef)
+	imageInfo, reference, err := f.regClient.ImageInfo(ctx, repo, tag)
 	if err != nil {
 		return nil, err
 	}
-
-	imageConfig, err := f.regClient.ImageConfig(ctx, tagRef)
-	if err != nil {
-		return nil, err
-	}
-	innerConfig := imageConfig.GetConfig()
 
 	return &templates.TagData{
 		Name:          repo,
 		Tag:           tag,
-		PullReference: tagRef.CommonName(),
-		CreatedAt:     innerConfig.Created.Format(time.RFC3339),
+		PullReference: reference,
+		CreatedAt:     imageInfo.Created.Format(time.RFC3339),
 	}, nil
 }
 
@@ -78,13 +69,7 @@ func (f *Filler) RepoData(ctx context.Context, repo string) (*templates.Reposito
 	log := logger.FromContext(ctx).With(slog.String("repo", repo))
 	tags := []templates.TagData{}
 
-	repoFullRef := fmt.Sprintf("%s/%s", f.registryHostname, repo)
-	repoRef, err := ref.New(repoFullRef)
-	if err != nil {
-		return nil, err
-	}
-
-	tagList, err := f.regClient.TagList(ctx, repoRef)
+	tagList, err := f.regClient.TagList(ctx, repo)
 	if err != nil {
 		if errors.Is(err, errs.ErrNotFound) {
 			return nil, nil
@@ -95,7 +80,7 @@ func (f *Filler) RepoData(ctx context.Context, repo string) (*templates.Reposito
 		return nil, nil
 	}
 
-	for _, tag := range tagList.Tags {
+	for _, tag := range tagList {
 		tagData, err := f.TagData(ctx, repo, tag)
 		if err != nil {
 			log.Warn("could not generate tag data", logger.ErrAttr(err), slog.String("tag", tag))

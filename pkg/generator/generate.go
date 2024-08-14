@@ -30,14 +30,14 @@ import (
 )
 
 type Generator struct {
-	regClient   *registry.Client
+	regClient   registry.Client
 	filler      *filler.Filler
 	absoluteDir string
 	baseDir     string
 }
 
 func New(
-	regClient *registry.Client,
+	regClient registry.Client,
 	filler *filler.Filler,
 	absoluteDir string,
 	baseDir string,
@@ -90,7 +90,7 @@ func (g *Generator) Generate(
 		return nil
 	}
 
-	for _, repo := range repos.Repositories {
+	for _, repo := range repos {
 		repoLog := log.With(slog.String("repo", repo))
 		repoLog.Info("generating repository page")
 		repoDir := path.Join(g.baseDir, "repo", repo)
@@ -146,17 +146,15 @@ func (g *Generator) generateIndex(
 		return err
 	}
 
-	if repos != nil {
-		for _, repo := range repos.Repositories {
-			repoData, err := g.filler.RepoData(ctx, repo)
-			if err != nil {
-				log.Warn("could not retrieve repo data", slog.String("repo", repo), logger.ErrAttr(err))
-			}
-			if repoData == nil {
-				continue
-			}
-			repositoriesData = append(repositoriesData, *repoData)
+	for _, repo := range repos {
+		repoData, err := g.filler.RepoData(ctx, repo)
+		if err != nil {
+			log.Warn("could not retrieve repo data", slog.String("repo", repo), logger.ErrAttr(err))
 		}
+		if repoData == nil {
+			continue
+		}
+		repositoriesData = append(repositoriesData, *repoData)
 	}
 
 	return templates.RenderIndex(w, templates.IndexData{
