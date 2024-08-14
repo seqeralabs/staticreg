@@ -32,6 +32,7 @@ var (
 	bindAddr          string
 	ignoredUserAgents []string
 	cacheDuration     time.Duration
+	refreshInterval   time.Duration
 )
 
 var serveCmd = &cobra.Command{
@@ -44,10 +45,11 @@ var serveCmd = &cobra.Command{
 			slog.Duration("cache-duration", cacheDuration),
 			slog.String("bind-addr", bindAddr),
 			slog.Any("ignored-user-agents", ignoredUserAgents),
+			slog.Any("refresh-interval", refreshInterval),
 		)
 
 		client := registry.New(rootCfg)
-		asyncClient := async.New(client)
+		asyncClient := async.New(client, refreshInterval)
 
 		filler := filler.New(asyncClient, rootCfg.RegistryHostname, "/")
 
@@ -84,6 +86,7 @@ var serveCmd = &cobra.Command{
 func init() {
 	serveCmd.PersistentFlags().StringVar(&bindAddr, "bind-addr", "127.0.0.1:8093", "server bind address")
 	serveCmd.PersistentFlags().StringArrayVar(&ignoredUserAgents, "ignored-user-agent", []string{}, "user agents to ignore (reply with empty body and 200 OK). A user agent is ignored if it contains the one of the values passed to this flag")
-	serveCmd.PersistentFlags().DurationVar(&cacheDuration, "cache-duration", time.Minute*10, "how long to keep a generated page in cache before expiring it, 0 to never expire")
+	serveCmd.PersistentFlags().DurationVar(&cacheDuration, "cache-duration", time.Minute*1, "how long to keep a generated page in cache before expiring it, 0 to never expire")
+	serveCmd.PersistentFlags().DurationVar(&cacheDuration, "refresh-interval", time.Minute*15, "how long to wait before trying to get fresh data from the target registry")
 	rootCmd.AddCommand(serveCmd)
 }

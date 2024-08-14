@@ -17,10 +17,13 @@ package async
 import (
 	"context"
 	"fmt"
+	"log/slog"
+	"time"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/puzpuzpuz/xsync/v3"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/seqeralabs/staticreg/pkg/observability/logger"
 	"github.com/seqeralabs/staticreg/pkg/registry"
 )
@@ -34,6 +37,8 @@ const tagRequestBufferSize = 10
 type Async struct {
 	// underlying is the actual registry client that does the registry operations, remember this is just a wrapper!
 	underlying registry.Client
+
+	refreshInterval time.Duration
 
 	repos []string
 
@@ -66,16 +71,19 @@ type imageInfo struct {
 func (c *Async) Start(ctx context.Context) error {
 	// TODO(fntlnz): maybe instead of errCh use a backoff and retry ops
 	errCh := make(chan error, 1)
-	go func() {
-		// TODO(fntlnz):find a better strategy than waiting
 
-		// for {
-		err := c.synchronizeRepositories(ctx)
-		if err != nil {
-			errCh <- err
+	go func() {
+		for {
+			err := backoff.Retry(func() error {
+				return c.synchronizeRepositories(ctx)
+			}, backoff.WithContext(newExponentialBackoff(), ctx))
+
+			if err != nil {
+				errCh <- err
+			}
+
+			time.Sleep(c.refreshInterval)
 		}
-		// time.Sleep(time.Minute)
-		// }
 	}()
 
 	go func() {
@@ -84,10 +92,7 @@ func (c *Async) Start(ctx context.Context) error {
 			case <-ctx.Done():
 				return
 			case req := <-c.repositoryRequestBuffer:
-				err := c.handleRepositoryRequest(ctx, req)
-				if err != nil {
-					errCh <- err
-				}
+				c.handleRepositoryRequest(ctx, req)
 			}
 		}
 	}()
@@ -98,10 +103,7 @@ func (c *Async) Start(ctx context.Context) error {
 			case <-ctx.Done():
 				return
 			case req := <-c.imageInfoRequestsBuffer:
-				err := c.handleImageInfoRequest(ctx, req)
-				if err != nil {
-					errCh <- err
-				}
+				c.handleImageInfoRequest(ctx, req)
 			}
 		}
 	}()
@@ -115,6 +117,8 @@ func (c *Async) Start(ctx context.Context) error {
 }
 
 func (c *Async) synchronizeRepositories(ctx context.Context) error {
+	log := logger.FromContext(ctx)
+	log.Info("starting process to synchronize repositories")
 	repos, err := c.underlying.RepoList(ctx)
 	if err != nil {
 		return err
@@ -128,13 +132,15 @@ func (c *Async) synchronizeRepositories(ctx context.Context) error {
 	return nil
 }
 
-func (c *Async) handleRepositoryRequest(ctx context.Context, req repositoryRequest) error {
+func (c *Async) handleRepositoryRequest(ctx context.Context, req repositoryRequest) {
 	log := logger.FromContext(ctx)
+	reqLog := log.With(slog.Any("req", req))
+	reqLog.Debug("handleRepositoryRequest")
 	tags, err := c.underlying.TagList(ctx, req.repo)
 
 	if err != nil {
-		log.Warn("could not list tags for image", logger.ErrAttr(err))
-		return nil
+		reqLog.Warn("could not list tags for image", logger.ErrAttr(err))
+		return
 
 	}
 	c.repositoryTags.Store(req.repo, tags)
@@ -146,23 +152,24 @@ func (c *Async) handleRepositoryRequest(ctx context.Context, req repositoryReque
 		}
 	}
 
-	return nil
+	return
 }
 
-func (c *Async) handleImageInfoRequest(ctx context.Context, req imageInfoRequest) error {
+func (c *Async) handleImageInfoRequest(ctx context.Context, req imageInfoRequest) {
 	log := logger.FromContext(ctx)
+	reqLog := log.With(slog.Any("req", req))
+	reqLog.Debug("handleImageInfoRequest")
 	key := imageInfoKey(req)
 	i, r, err := c.underlying.ImageInfo(ctx, req.repo, req.tag)
 	if err != nil {
-		log.Warn("could not get image info for tag", logger.ErrAttr(err))
-		return nil
+		reqLog.Warn("could not get image info for tag", logger.ErrAttr(err))
+		return
 	}
 	imageInfo := imageInfo{
 		image:     i,
 		reference: r,
 	}
 	c.imageInfo.Store(key, imageInfo)
-	return nil
 }
 
 func (c *Async) RepoList(ctx context.Context) ([]string, error) {
@@ -189,12 +196,21 @@ func (c *Async) ImageInfo(ctx context.Context, repo string, tag string) (image v
 	return info.image, info.reference, nil
 }
 
-func New(client registry.Client) *Async {
+func New(client registry.Client, refreshInterval time.Duration) *Async {
 	return &Async{
 		underlying:              client,
+		refreshInterval:         refreshInterval,
 		repositoryTags:          xsync.NewMapOf[string, []string](),
 		imageInfo:               xsync.NewMapOf[imageInfoKey, imageInfo](),
 		repositoryRequestBuffer: make(chan repositoryRequest, tagRequestBufferSize),
 		imageInfoRequestsBuffer: make(chan imageInfoRequest, imageInfoRequestsBufSize),
 	}
+}
+
+func newExponentialBackoff() *backoff.ExponentialBackOff {
+	bo := backoff.NewExponentialBackOff()
+	bo.Multiplier = 1.1
+	bo.MaxInterval = 10 * time.Second
+	bo.MaxElapsedTime = 5 * time.Minute
+	return bo
 }
