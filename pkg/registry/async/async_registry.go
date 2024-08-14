@@ -17,10 +17,10 @@ package async
 import (
 	"context"
 	"fmt"
-	"time"
 
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/puzpuzpuz/xsync/v3"
-	v1 "github.com/regclient/regclient/types/oci/v1"
+
 	"github.com/seqeralabs/staticreg/pkg/observability/logger"
 	"github.com/seqeralabs/staticreg/pkg/registry"
 )
@@ -59,7 +59,7 @@ type imageInfoRequest struct {
 }
 
 type imageInfo struct {
-	image     *v1.Image
+	image     v1.Image
 	reference string
 }
 
@@ -69,13 +69,13 @@ func (c *Async) Start(ctx context.Context) error {
 	go func() {
 		// TODO(fntlnz):find a better strategy than waiting
 
-		for {
-			err := c.synchronizeRepositories(ctx)
-			if err != nil {
-				errCh <- err
-			}
-			time.Sleep(time.Minute)
+		// for {
+		err := c.synchronizeRepositories(ctx)
+		if err != nil {
+			errCh <- err
 		}
+		// time.Sleep(time.Minute)
+		// }
 	}()
 
 	go func() {
@@ -119,12 +119,12 @@ func (c *Async) synchronizeRepositories(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	c.repos = repos
 
 	for _, r := range repos {
 		c.repositoryRequestBuffer <- repositoryRequest{repo: r}
 	}
 
-	c.repos = repos
 	return nil
 }
 
@@ -177,7 +177,7 @@ func (c *Async) TagList(ctx context.Context, repo string) ([]string, error) {
 	return tags, nil
 }
 
-func (c *Async) ImageInfo(ctx context.Context, repo string, tag string) (image *v1.Image, reference string, err error) {
+func (c *Async) ImageInfo(ctx context.Context, repo string, tag string) (image v1.Image, reference string, err error) {
 	key := imageInfoKey{
 		repo: repo,
 		tag:  tag,

@@ -47,11 +47,16 @@ func (f *Filler) TagData(ctx context.Context, repo string, tag string) (*templat
 		return nil, err
 	}
 
+	cfg, err := imageInfo.ConfigFile()
+	if err != nil {
+		return nil, err
+	}
+
 	return &templates.TagData{
 		Name:          repo,
 		Tag:           tag,
 		PullReference: reference,
-		CreatedAt:     imageInfo.Created.Format(time.RFC3339),
+		CreatedAt:     cfg.Created.Format(time.RFC3339),
 	}, nil
 }
 

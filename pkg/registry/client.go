@@ -17,7 +17,7 @@ package registry
 import (
 	"context"
 
-	v1 "github.com/regclient/regclient/types/oci/v1"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 )
 
 // Client interface defines methods for interacting with a container registry
@@ -29,5 +29,5 @@ type Client interface {
 	TagList(ctx context.Context, repo string) (tags []string, err error)
 
 	// ImageInfo retrieves detailed information about a specific image identified by its repository and tag
-	ImageInfo(ctx context.Context, repo string, tag string) (image *v1.Image, reference string, err error)
+	ImageInfo(ctx context.Context, repo string, tag string) (image v1.Image, reference string, err error)
 }
