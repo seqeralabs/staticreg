@@ -18,110 +18,83 @@ import (
 	"context"
 	"fmt"
 
-	"errors"
+	"github.com/google/go-containerregistry/pkg/name"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/google/go-containerregistry/pkg/v1/remote"
 
-	"github.com/regclient/regclient"
-	"github.com/regclient/regclient/config"
-	regclienterrs "github.com/regclient/regclient/types/errs"
-	v1 "github.com/regclient/regclient/types/oci/v1"
-	"github.com/regclient/regclient/types/ref"
 	"github.com/seqeralabs/staticreg/pkg/cfg"
-	"github.com/seqeralabs/staticreg/pkg/registry/errs"
 )
 
-func hostFromConfig(rootCfg *cfg.Root) config.Host {
-	regHost := config.Host{
-		Name:     rootCfg.RegistryHostname,
-		Hostname: rootCfg.RegistryHostname,
-		User:     rootCfg.RegistryUser,
-		Pass:     rootCfg.RegistryPassword,
-	}
+const defaultUserAgent = "seqera/staticreg"
 
-	if !rootCfg.TLSEnabled {
-		regHost.TLS = config.TLSDisabled
-	}
+var (
+	uaOption = remote.WithUserAgent(defaultUserAgent)
+)
 
-	if rootCfg.SkipTLSVerify {
-		regHost.TLS = config.TLSInsecure
-	}
-
-	return regHost
+type config struct {
+	Registry      string
+	User          string
+	Password      string
+	SkipTLSVerify bool
+	TLSEnabled    bool
 }
 
 type Registry struct {
-	regHost       config.Host
-	catalogClient *regclient.RegClient
-	pullClient    *regclient.RegClient
+	cfg config
+}
+
+func (c *Registry) RepoName(r string) (name.Repository, error) {
+	return name.NewRepository(r, name.WithDefaultRegistry(c.cfg.Registry))
 }
 
 func (c *Registry) RepoList(ctx context.Context) ([]string, error) {
-	ret, err := c.catalogClient.RepoList(ctx, c.regHost.Hostname)
+	reg, _ := name.NewRegistry(c.cfg.Registry)
+	repos, err := remote.Catalog(ctx, reg)
 	if err != nil {
 		return nil, err
 	}
-	if ret == nil {
-		return []string{}, nil
+	reposret := []string{}
+	for _, r := range repos {
+		repoName, err := c.RepoName(r)
+		if err != nil {
+			return nil, err
+		}
+		reposret = append(reposret, repoName.RepositoryStr())
 	}
-	return ret.Repositories, nil
+	return reposret, nil
 }
 
 func (c *Registry) TagList(ctx context.Context, repo string) ([]string, error) {
-	repoFullRef := fmt.Sprintf("%s/%s", c.regHost.Hostname, repo)
-	repoRef, err := ref.New(repoFullRef)
+	rname, err := name.NewRepository(repo, name.WithDefaultRegistry(c.cfg.Registry))
 	if err != nil {
-		if errors.Is(regclienterrs.ErrInvalidReference, err) {
-			return nil, errs.ErrInvalidReference
-		}
 		return nil, err
 	}
-	ret, err := c.pullClient.TagList(ctx, repoRef)
-	if err != nil {
-		if errors.Is(regclienterrs.ErrNotFound, err) {
-			return nil, errs.ErrNotFound
-		}
-		return nil, err
-	}
-	if ret == nil {
-		return []string{}, nil
-	}
-	return ret.Tags, nil
+	return remote.List(rname, remote.WithContext(ctx), uaOption)
 }
 
-func (c *Registry) ImageInfo(ctx context.Context, repo string, tag string) (image *v1.Image, reference string, err error) {
-
-	tagFullRef := fmt.Sprintf("%s/%s:%s", c.regHost.Hostname, repo, tag)
-	tagRef, err := ref.New(tagFullRef)
+func (c *Registry) ImageInfo(ctx context.Context, image string, tag string) (v1.Image, string, error) {
+	ref, err := name.ParseReference(fmt.Sprintf("%s/%s:%s", c.cfg.Registry, image, tag))
 	if err != nil {
-		if errors.Is(regclienterrs.ErrInvalidReference, err) {
-			return nil, "", errs.ErrInvalidReference
-		}
+		return nil, "", err
+	}
+	i, err := remote.Image(ref, remote.WithContext(ctx), uaOption)
+	if err != nil {
 		return nil, "", err
 	}
 
-	i, err := c.pullClient.ImageConfig(ctx, tagRef)
-	if err != nil {
-		if errors.Is(regclienterrs.ErrNotFound, err) {
-			return nil, "", errs.ErrNotFound
-		}
-		return nil, "", err
-	}
-	img := i.GetConfig()
-	return &img, tagRef.CommonName(), err
+	return i, ref.String(), nil
 }
 
 func New(rootCfg *cfg.Root) *Registry {
-	regHost := hostFromConfig(rootCfg)
-	catalogClient := regclient.New(
-		regclient.WithConfigHost(regHost),
-		regclient.WithUserAgent("seqera/staticreg"),
-	)
-	pullClient := regclient.New(
-		regclient.WithConfigHost(regHost),
-		regclient.WithUserAgent("seqera/staticreg"),
-	)
+	cfg := config{
+		Registry:      rootCfg.RegistryHostname,
+		User:          rootCfg.RegistryUser,
+		Password:      rootCfg.RegistryPassword,
+		TLSEnabled:    rootCfg.TLSEnabled,
+		SkipTLSVerify: rootCfg.SkipTLSVerify,
+	}
+
 	return &Registry{
-		catalogClient: catalogClient,
-		pullClient:    pullClient,
-		regHost:       regHost,
+		cfg: cfg,
 	}
 }
