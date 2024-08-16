@@ -52,7 +52,7 @@ type BaseData struct {
 
 type IndexData struct {
 	BaseData
-	Repositories []RepositoryData
+	Repositories []IndexRepositoryData
 }
 
 func RenderIndex(w io.Writer, data IndexData) error {
@@ -72,6 +72,13 @@ type RepositoryData struct {
 	RepositoryName string
 	PullReference  string
 	Tags           []TagData
+	LastUpdatedAt  string
+}
+
+type IndexRepositoryData struct {
+	BaseData
+	RepositoryName string
+	PullReference  string
 	LastUpdatedAt  string
 }
 

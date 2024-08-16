@@ -91,9 +91,9 @@ func (g *Generator) Generate(
 	}
 
 	for _, repo := range repos {
-		repoLog := log.With(slog.String("repo", repo))
+		repoLog := log.With(slog.String("repo", repo.Name))
 		repoLog.Info("generating repository page")
-		repoDir := path.Join(g.baseDir, "repo", repo)
+		repoDir := path.Join(g.baseDir, "repo", repo.Name)
 		if err := os.MkdirAll(repoDir, 0755); err != nil {
 			return err
 		}
@@ -103,7 +103,7 @@ func (g *Generator) Generate(
 		}
 		defer f.Close()
 
-		err = g.generateRepository(ctx, f, repo)
+		err = g.generateRepository(ctx, f, repo.Name)
 		if err != nil {
 			repoLog.Error("error generating repository page, skipping...")
 		}
@@ -147,9 +147,9 @@ func (g *Generator) generateIndex(
 	}
 
 	for _, repo := range repos {
-		repoData, err := g.filler.RepoData(ctx, repo)
+		repoData, err := g.filler.RepoData(ctx, repo.Name)
 		if err != nil {
-			log.Warn("could not retrieve repo data", slog.String("repo", repo), logger.ErrAttr(err))
+			log.Warn("could not retrieve repo data", slog.String("repo", repo.Name), logger.ErrAttr(err))
 		}
 		if repoData == nil {
 			continue

@@ -16,14 +16,21 @@ package registry
 
 import (
 	"context"
+	"time"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 )
 
+type RepoData struct {
+	Name          string
+	PullReference string
+	LastUpdatedAt time.Time
+}
+
 // Client interface defines methods for interacting with a container registry
 type Client interface {
 	// RepoList retrieves a list of repository names from the registry
-	RepoList(ctx context.Context) (repos []string, err error)
+	RepoList(ctx context.Context) (repos map[string]RepoData, err error)
 
 	// TagList retrieves a list of tags for a specified repository
 	TagList(ctx context.Context, repo string) (tags []string, err error)

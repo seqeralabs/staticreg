@@ -113,7 +113,7 @@ func (f *Filler) RepoData(ctx context.Context, repo string) (*templates.Reposito
 		LastUpdatedAt:  mostRecentTag.CreatedAt,
 	}
 
-	return repoData, err
+	return repoData, nil
 }
 
 func orderTagsByDate(tags []templates.TagData) []templates.TagData {
