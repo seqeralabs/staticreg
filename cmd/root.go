@@ -33,7 +33,8 @@ var rootCmd = &cobra.Command{
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
 
-		log := logger.New(cmd.OutOrStderr(), rootCfg.LogInJSON)
+		log := logger.New(cmd.OutOrStderr(), rootCfg.LogInJSON, rootCfg.Verbose)
+
 		ctx = logger.Context(ctx, log)
 		cmd.SetContext(ctx)
 
@@ -72,4 +73,5 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&rootCfg.SkipTLSVerify, "skip-tls-verify", false, "disable TLS certificate checks")
 	rootCmd.PersistentFlags().BoolVar(&rootCfg.TLSEnabled, "tls-enable", false, "enable TLS")
 	rootCmd.PersistentFlags().BoolVar(&rootCfg.LogInJSON, "json-logging", false, "log in JSON")
+	rootCmd.PersistentFlags().BoolVar(&rootCfg.Verbose, "verbose", false, "enable verbose logging")
 }

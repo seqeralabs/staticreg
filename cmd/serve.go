@@ -15,6 +15,9 @@
 package cmd
 
 import (
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"log/slog"
@@ -26,6 +29,7 @@ import (
 	"github.com/seqeralabs/staticreg/pkg/server"
 	"github.com/seqeralabs/staticreg/pkg/server/staticreg"
 	"github.com/spf13/cobra"
+	"golang.org/x/sync/errgroup"
 )
 
 var (
@@ -40,6 +44,9 @@ var serveCmd = &cobra.Command{
 	Short: "Serves a webserver with an HTML listing of all images and tags in a v2 registry",
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
+		ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
+		defer stop()
+
 		log := logger.FromContext(ctx)
 		log.Info("starting server",
 			slog.Duration("cache-duration", cacheDuration),
@@ -60,24 +67,22 @@ var serveCmd = &cobra.Command{
 			return
 		}
 
-		errCh := make(chan error, 1)
-		go func() {
-			errCh <- srv.Start()
-		}()
+		g, ctx := errgroup.WithContext(ctx)
 
-		go func() {
-			errCh <- asyncClient.Start(ctx)
-		}()
+		g.Go(func() error {
+			return srv.Start(ctx)
+		})
 
-		select {
-		case <-ctx.Done():
-			return
-		case err := <-errCh:
-			if err == nil {
-				slog.Error("operations exited unexpectedly")
-				return
+		g.Go(func() error {
+			return asyncClient.Start(ctx)
+		})
+
+		if err := g.Wait(); err != nil {
+			if ctx.Err() != nil {
+				log.Info("context cancelled, shutting down")
+			} else {
+				slog.Error("unexpected error", logger.ErrAttr(err))
 			}
-			slog.Error("unexpected error", logger.ErrAttr(err))
 			return
 		}
 	},
@@ -87,6 +92,6 @@ func init() {
 	serveCmd.PersistentFlags().StringVar(&bindAddr, "bind-addr", "127.0.0.1:8093", "server bind address")
 	serveCmd.PersistentFlags().StringArrayVar(&ignoredUserAgents, "ignored-user-agent", []string{}, "user agents to ignore (reply with empty body and 200 OK). A user agent is ignored if it contains the one of the values passed to this flag")
 	serveCmd.PersistentFlags().DurationVar(&cacheDuration, "cache-duration", time.Minute*1, "how long to keep a generated page in cache before expiring it, 0 to never expire")
-	serveCmd.PersistentFlags().DurationVar(&cacheDuration, "refresh-interval", time.Minute*15, "how long to wait before trying to get fresh data from the target registry")
+	serveCmd.PersistentFlags().DurationVar(&refreshInterval, "refresh-interval", time.Minute*15, "how long to wait before trying to get fresh data from the target registry")
 	rootCmd.AddCommand(serveCmd)
 }

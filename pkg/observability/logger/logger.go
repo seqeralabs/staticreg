@@ -24,27 +24,21 @@ type (
 	loggerKey struct{}
 )
 
-func newProduction(w io.Writer) *slog.Logger {
+func New(w io.Writer, logInJSON bool, verbose bool) *slog.Logger {
 	level := slog.LevelInfo
-	handler := slog.NewJSONHandler(w, &slog.HandlerOptions{
-		Level: level,
-	})
-	return slog.New(handler)
-}
-
-func newDevelopment(w io.Writer) *slog.Logger {
-	level := slog.LevelDebug
-	handler := slog.NewTextHandler(w, &slog.HandlerOptions{
-		Level: level,
-	})
-	return slog.New(handler)
-}
-
-func New(w io.Writer, production bool) *slog.Logger {
-	if production {
-		return newProduction(w)
+	if verbose {
+		level = slog.LevelDebug
 	}
-	return newDevelopment(w)
+
+	if logInJSON {
+		return slog.New(slog.NewJSONHandler(w, &slog.HandlerOptions{
+			Level: level,
+		}))
+	}
+
+	return slog.New(slog.NewTextHandler(w, &slog.HandlerOptions{
+		Level: level,
+	}))
 }
 
 func Context(ctx context.Context, logger *slog.Logger) context.Context {
