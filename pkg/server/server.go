@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -9,8 +10,8 @@ import (
 	cache "github.com/chenyahui/gin-cache"
 	"github.com/chenyahui/gin-cache/persist"
 	sloggin "github.com/samber/slog-gin"
+	"golang.org/x/sync/errgroup"
 
-	// "github.com/chenyahui/gin-cache/persist"
 	"github.com/gin-gonic/gin"
 )
 
@@ -40,6 +41,7 @@ func New(
 	r := gin.New()
 
 	lmConfig := sloggin.Config{
+		DefaultLevel:       slog.LevelDebug,
 		WithUserAgent:      true,
 		WithRequestID:      true,
 		WithRequestBody:    false,
@@ -78,8 +80,14 @@ func New(
 	}, nil
 }
 
-func (s *Server) Start() error {
-	return s.server.ListenAndServe()
+func (s *Server) Start(ctx context.Context) error {
+	g, ctx := errgroup.WithContext(ctx)
+	g.Go(s.server.ListenAndServe)
+	g.Go(func() error {
+		<-ctx.Done()
+		return s.server.Shutdown(context.Background())
+	})
+	return g.Wait()
 }
 
 func injectLoggerMiddleware(log *slog.Logger) gin.HandlerFunc {

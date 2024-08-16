@@ -21,4 +21,5 @@ type Root struct {
 	SkipTLSVerify    bool
 	TLSEnabled       bool
 	LogInJSON        bool
+	Verbose          bool
 }
