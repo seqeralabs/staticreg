@@ -1,13 +1,12 @@
 # :package: staticreg
 
-A tool to generate a static website from an OCI registry that supports the `/v2/_catalog` endpoint.
+A tool to serve a website from an OCI registry that supports the `/v2/_catalog` endpoint.
 
 - [:package: staticreg](#package-staticreg)
   - [Features](#features)
   - [Install staticreg](#install-staticreg)
   - [Run staticreg](#run-staticreg)
-    - [Generate a static website `staticreg`](#generate-a-static-website-staticreg)
-    - [Serve the website directly](#serve-the-website-directly)
+    - [Serve the website](#serve-the-website)
     - [Run with Docker](#run-with-docker)
   - [Install on Kubernetes](#install-on-kubernetes)
   - [Contributing](#contributing)
@@ -16,7 +15,7 @@ A tool to generate a static website from an OCI registry that supports the `/v2/
 
 :white_check_mark: Images list page<br>
 :white_check_mark: Image tags list page<br>
-:white_check_mark: Static website or HTTP webserver with cache
+:white_check_mark: Static website
 
 <img alt="staticreg screenshot" src="docs/_static/screenshot.png">
 
@@ -28,13 +27,7 @@ However, we also release pre-built binaries for Windows, Linux and MacOS for i38
 
 ## Run staticreg
 
-### Generate a static website `staticreg`
-
-```bash
-staticreg generate
-```
-
-### Serve the website directly
+### Serve the website
 
 ```bash
 staticreg serve

@@ -194,6 +194,8 @@ func (c *Async) handleImageInfoRequest(ctx context.Context, req imageInfoRequest
 	reqLog := log.With(slog.Any("req", req))
 	reqLog.Debug("handleImageInfoRequest")
 	key := imageInfoKey(req)
+
+	// update image info
 	i, r, err := c.underlying.ImageInfo(ctx, req.repo, req.tag)
 	if err != nil {
 		reqLog.Warn("could not get image info for tag", logger.ErrAttr(err))
@@ -205,6 +207,7 @@ func (c *Async) handleImageInfoRequest(ctx context.Context, req imageInfoRequest
 	}
 	c.imageInfo.Store(key, imageInfo)
 
+	// update repos
 	cf, err := imageInfo.image.ConfigFile()
 	if err != nil {
 		reqLog.Warn("could not get config file for tag", logger.ErrAttr(err))
