@@ -15,13 +15,7 @@
 package cmd
 
 import (
-	"log/slog"
 	"path"
-
-	"github.com/seqeralabs/staticreg/pkg/filler"
-	"github.com/seqeralabs/staticreg/pkg/generator"
-	"github.com/seqeralabs/staticreg/pkg/observability/logger"
-	"github.com/seqeralabs/staticreg/pkg/registry/registry"
 
 	"github.com/spf13/cobra"
 )
@@ -35,20 +29,21 @@ var generateCmd = &cobra.Command{
 	Use:   "generate",
 	Short: "Render an html listing of all images and tags in a v2 registry to an output directory",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		ctx := cmd.Context()
-		log := logger.FromContext(ctx)
+		return nil
+		// ctx := cmd.Context()
+		// log := logger.FromContext(ctx)
 
-		client := registry.New(rootCfg)
+		// client := registry.New(rootCfg)
 
-		sanitizedAbsoluteDir := sanitizeAbsoluteDirPath(absoluteDir)
-		log.Info("generating static website",
-			slog.String("output", outputDirectory),
-			slog.String("absolute-dir", sanitizedAbsoluteDir),
-		)
+		// sanitizedAbsoluteDir := sanitizeAbsoluteDirPath(absoluteDir)
+		// log.Info("generating static website",
+		// 	slog.String("output", outputDirectory),
+		// 	slog.String("absolute-dir", sanitizedAbsoluteDir),
+		// )
 
-		filler := filler.New(client, rootCfg.RegistryHostname, sanitizedAbsoluteDir)
-		gen := generator.New(client, filler, sanitizedAbsoluteDir, outputDirectory)
-		return gen.Generate(ctx)
+		// filler := filler.New(client, rootCfg.RegistryHostname, sanitizedAbsoluteDir)
+		// gen := generator.New(client, filler, sanitizedAbsoluteDir, outputDirectory)
+		// return gen.Generate(ctx)
 
 	},
 }

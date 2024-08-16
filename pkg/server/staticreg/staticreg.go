@@ -19,7 +19,9 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"sort"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -52,10 +54,7 @@ func New(
 }
 
 func (s *StaticregServer) RepositoriesListHandler(c *gin.Context) {
-
-	log := logger.FromContext(c)
-
-	repositoriesData := []templates.RepositoryData{}
+	repositoriesData := []templates.IndexRepositoryData{}
 	baseData := s.dataFiller.BaseData()
 
 	repos, err := s.regClient.RepoList(c)
@@ -64,16 +63,26 @@ func (s *StaticregServer) RepositoriesListHandler(c *gin.Context) {
 		return
 	}
 
-	for _, repo := range repos {
-		repoData, err := s.dataFiller.RepoData(c, repo)
-		if err != nil {
-			log.Warn("could not retrieve repo data", slog.String("repo", repo), logger.ErrAttr(err))
+	sortedRepos := make([]string, len(repos))
+	i := 0
+	for k := range repos {
+		sortedRepos[i] = k
+		i++
+	}
+	sort.Strings(sortedRepos)
+
+	for _, rk := range sortedRepos {
+		repo, ok := repos[rk]
+		if !ok {
 			continue
 		}
-		if repoData == nil {
-			continue
+		idata := templates.IndexRepositoryData{
+			BaseData:       baseData,
+			RepositoryName: repo.Name,
+			PullReference:  repo.PullReference,
+			LastUpdatedAt:  repo.LastUpdatedAt.Format(time.RFC3339),
 		}
-		repositoriesData = append(repositoriesData, *repoData)
+		repositoriesData = append(repositoriesData, idata)
 	}
 
 	var buf bytes.Buffer

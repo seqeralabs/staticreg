@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"sync"
 	"time"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
@@ -27,6 +28,7 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	"github.com/seqeralabs/staticreg/pkg/observability/logger"
 	"github.com/seqeralabs/staticreg/pkg/registry"
+	registryimpl "github.com/seqeralabs/staticreg/pkg/registry/registry"
 )
 
 const imageInfoRequestsBufSize = 10
@@ -42,12 +44,13 @@ var (
 // It continuously syncs data from the registry in a separate goroutine.
 type Async struct {
 	// underlying is the actual registry client that does the registry operations, remember this is just a wrapper!
-	underlying registry.Client
+	underlying *registryimpl.Registry
 	// refreshInterval represents the time to wait to synchronize repositories again after a successful synchronization
 	refreshInterval time.Duration
 
 	// repos is an in memory list of all the repository names in the registry
-	repos []string
+	repos      map[string]registry.RepoData
+	reposMutex sync.RWMutex
 
 	// repositoryTags represents the list of tags for each repository
 	repositoryTags *xsync.MapOf[string, []string]
@@ -148,7 +151,6 @@ func (c *Async) synchronizeRepositories(ctx context.Context, reqChan chan<- repo
 	if err != nil {
 		return err
 	}
-	c.repos = repos
 
 	for _, r := range repos {
 		select {
@@ -202,13 +204,32 @@ func (c *Async) handleImageInfoRequest(ctx context.Context, req imageInfoRequest
 		reference: r,
 	}
 	c.imageInfo.Store(key, imageInfo)
+
+	cf, err := imageInfo.image.ConfigFile()
+	if err != nil {
+		reqLog.Warn("could not get config file for tag", logger.ErrAttr(err))
+		return
+	}
+
+	if prev, ok := c.repos[req.repo]; ok {
+		if prev.LastUpdatedAt.After(cf.Created.Time) {
+			return
+		}
+	}
+
+	c.reposMutex.Lock()
+	defer c.reposMutex.Unlock()
+	c.repos[req.repo] = registry.RepoData{
+		Name:          req.repo,
+		LastUpdatedAt: cf.Created.Time,
+		PullReference: r,
+	}
 }
 
-func (c *Async) RepoList(ctx context.Context) ([]string, error) {
+func (c *Async) RepoList(ctx context.Context) (repos map[string]registry.RepoData, err error) {
 	return c.repos, nil
 }
 
-// TagList contains
 func (c *Async) TagList(ctx context.Context, repo string) ([]string, error) {
 	tags, ok := c.repositoryTags.Load(repo)
 	if !ok {
@@ -229,12 +250,13 @@ func (c *Async) ImageInfo(ctx context.Context, repo string, tag string) (image v
 	return info.image, info.reference, nil
 }
 
-func New(client registry.Client, refreshInterval time.Duration) *Async {
+func New(client *registryimpl.Registry, refreshInterval time.Duration) *Async {
 	return &Async{
 		underlying:      client,
 		refreshInterval: refreshInterval,
 		repositoryTags:  xsync.NewMapOf[string, []string](),
 		imageInfo:       xsync.NewMapOf[imageInfoKey, imageInfo](),
+		repos:           map[string]registry.RepoData{},
 	}
 }
 
