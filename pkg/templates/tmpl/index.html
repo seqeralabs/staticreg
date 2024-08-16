@@ -23,22 +23,22 @@
                 <table id="imageTable" class="w-full bg-white border divide-gray-200 ">
                     <thead>
                         <tr class="bg-gray-100">
-                            <th class="p-2 text-left">Name</th>
-                            <th class="p-2 text-left">Last updated at</th>
+                            <th class="p-2 text-left max-w-lg min-w-lg">Name</th>
+                            <th class="p-2 text-left min-w-[150px]">Last updated at</th>
                             <th class="p-2 text-left">Pull Command</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-300">
                         {{range .Repositories}}
-                        <tr class="[&>*]:whitespace-nowrap [&>*]:px-4 [&>*]:py-2">
-                            <td class="p-2 text-left"><a
+                        <tr>
+                            <td class="p-2 text-left  break-words whitespace-pre-line"><a
                                     class="text-blue-600 hover:text-blue-800 visited:text-purple-600"
                                     href="{{$.AbsoluteDir}}repo/{{.RepositoryName}}">{{.RepositoryName}}</a>
                             </td>
-                            <td class="p-2 text-xs text-left">{{.LastUpdatedAt}}
+                            <td class="p-2 text-xs text-left min-w-lg">{{.LastUpdatedAt}}
                             </td>
 
-                            <td class="p-2 font-mono text-left"><span
+                            <td class="p-2 font-mono text-left whitespace-nowrap"><span
                                     class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">docker
                                     pull {{.PullReference}}</span></td>
                         </tr>

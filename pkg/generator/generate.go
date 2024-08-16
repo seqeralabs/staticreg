@@ -21,6 +21,8 @@ import (
 	"log/slog"
 	"os"
 	"path"
+	"sort"
+	"time"
 
 	"github.com/seqeralabs/staticreg/pkg/filler"
 	"github.com/seqeralabs/staticreg/pkg/observability/logger"
@@ -137,8 +139,7 @@ func (g *Generator) generateIndex(
 	w io.Writer,
 ) error {
 	log := logger.FromContext(ctx)
-
-	repositoriesData := []templates.RepositoryData{}
+	repositoriesData := []templates.IndexRepositoryData{}
 
 	baseData := g.filler.BaseData()
 	repos, err := g.regClient.RepoList(ctx)
@@ -146,15 +147,27 @@ func (g *Generator) generateIndex(
 		return err
 	}
 
-	for _, repo := range repos {
-		repoData, err := g.filler.RepoData(ctx, repo.Name)
-		if err != nil {
+	sortedRepos := make([]string, len(repos))
+	i := 0
+	for k := range repos {
+		sortedRepos[i] = k
+		i++
+	}
+	sort.Strings(sortedRepos)
+
+	for _, rk := range sortedRepos {
+		repo, ok := repos[rk]
+		if !ok {
 			log.Warn("could not retrieve repo data", slog.String("repo", repo.Name), logger.ErrAttr(err))
-		}
-		if repoData == nil {
 			continue
 		}
-		repositoriesData = append(repositoriesData, *repoData)
+		idata := templates.IndexRepositoryData{
+			BaseData:       baseData,
+			RepositoryName: repo.Name,
+			PullReference:  repo.PullReference,
+			LastUpdatedAt:  repo.LastUpdatedAt.Format(time.RFC3339),
+		}
+		repositoriesData = append(repositoriesData, idata)
 	}
 
 	return templates.RenderIndex(w, templates.IndexData{
