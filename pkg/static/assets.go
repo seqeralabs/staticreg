@@ -12,19 +12,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-//go:generate make -C ../ ./static/css/output.css
 package static
 
 import (
+	"embed"
 	_ "embed"
-	"io"
 )
 
-//go:embed css/output.css
-var css []byte
-
-func RenderStyle(w io.Writer) error {
-	_, err := w.Write(css)
-	return err
-}
+//go:embed assets
+var Assets embed.FS
