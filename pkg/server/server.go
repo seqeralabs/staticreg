@@ -10,6 +10,7 @@ import (
 	cache "github.com/chenyahui/gin-cache"
 	"github.com/chenyahui/gin-cache/persist"
 	sloggin "github.com/samber/slog-gin"
+	"github.com/seqeralabs/staticreg/pkg/static"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/gin-gonic/gin"
@@ -26,7 +27,6 @@ type ServerImpl interface {
 	NotFoundHandler(ctx *gin.Context)
 	NoRouteHandler(ctx *gin.Context)
 	InternalServerErrorHandler(ctx *gin.Context)
-	CSSHandler(ctx *gin.Context)
 }
 
 func New(
@@ -57,7 +57,11 @@ func New(
 	r.Use(serverImpl.NotFoundHandler)
 	r.Use(serverImpl.InternalServerErrorHandler)
 
-	r.GET("/static/style.css", serverImpl.CSSHandler)
+	staticRouter := r.Group("/static")
+	{
+		staticRouter.Use(cacheControlMiddleware())
+		staticRouter.StaticFS("/", http.FS(static.Assets))
+	}
 
 	ignoredUAMiddleware := ignoreUserAgentMiddleware(ignoredUserAgents)
 
@@ -112,5 +116,11 @@ func ignoreUserAgentMiddleware(ignoredUserAgents []string) gin.HandlerFunc {
 			}
 		}
 		c.Next()
+	}
+}
+
+func cacheControlMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Writer.Header().Set("Cache-Control", "public, max-age=604800, immutable")
 	}
 }

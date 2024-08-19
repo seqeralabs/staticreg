@@ -30,7 +30,6 @@ import (
 	"github.com/seqeralabs/staticreg/pkg/registry"
 	"github.com/seqeralabs/staticreg/pkg/registry/errs"
 	"github.com/seqeralabs/staticreg/pkg/templates"
-	"github.com/seqeralabs/staticreg/static"
 
 	servererrors "github.com/seqeralabs/staticreg/pkg/server/errors"
 )
@@ -202,15 +201,6 @@ func (s *StaticregServer) NoRouteHandler(c *gin.Context) {
 	baseData := s.dataFiller.BaseData()
 
 	err := templates.Render404(c.Writer, baseData)
-	if err != nil {
-		c.Error(err)
-		return
-	}
-}
-
-func (s *StaticregServer) CSSHandler(c *gin.Context) {
-	c.Writer.Header().Set("Content-Type", "text/css")
-	err := static.RenderStyle(c.Writer)
 	if err != nil {
 		c.Error(err)
 		return

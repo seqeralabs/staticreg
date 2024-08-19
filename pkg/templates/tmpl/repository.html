@@ -4,52 +4,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{.AbsoluteDir}}static/style.css">
+    <link rel="stylesheet" href="{{.AbsoluteDir}}static/assets/css/output.css">
     <title>{{.RepositoryName}} | {{.RegistryName}}</title>
 </head>
 
 <body class="bg-gray-100 min-w-[240px]">
-
-
-    <header class="bg-white shadow">
-        <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-            <h1 class="lg:text-3xl xs:text-sm font-bold tracking-tight text-gray-900"><a
-                    class="text-blue-600 hover:text-blue-800 visited:text-purple-600"
-                    href="{{.AbsoluteDir}}">{{.RegistryName}}</a>/{{.RepositoryName}}</h1>
-        </div>
-    </header>
-
-
-    <main>
-        <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-            <div class="overflow-x-auto">
-                <table class="w-full bg-white border divide-gray-200 ">
-                    <thead>
-                        <tr class="bg-gray-100">
-                            <th class="p-2 text-left">Tag</th>
-                            <th class="p-2 text-left">Created</th>
-                            <th class="p-2 text-left">Pull Command</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-300">
-                        {{range .Tags}}
-                        <tr class="[&>*]:whitespace-nowrap [&>*]:px-4 [&>*]:py-2">
-                            <td class="p-2 text-left">{{.Tag}}
-                            </td>
-                            <td class="p-2 text-xs text-left">{{.CreatedAt}}</td>
-                            <td class="p-2 font-mono text-left"><span
-                                    class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">docker
-                                    pull {{.PullReference}}</span></td>
-                        </tr>
-                        {{end}}
-                    </tbody>
-                </table>
+    <div class="min-h-screen">
+        <header class="bg-white shadow">
+            <div class="container mx-auto  px-4 py-6 sm:px-6 lg:px-8">
+                <h1 class="lg:text-3xl xs:text-sm font-bold tracking-tight text-gray-900"><a
+                        class="text-blue-600 hover:text-blue-800 visited:text-purple-600"
+                        href="{{.AbsoluteDir}}">{{.RegistryName}}</a>/{{.RepositoryName}}</h1>
             </div>
-        </div>
-    </main>
-    <footer class="p-4 text-center text-sm text-gray-600">
-        <p>Last updated: {{.LastUpdated}}</p>
-    </footer>
+        </header>
+        <main class="container mx-auto">
+            <div class="mx-auto px-4 py-6 sm:px-6 lg:px-8">
+                <div class="overflow-x-auto">
+                    <table class="w-full bg-white border divide-gray-200 ">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="p-2 text-left">Tag</th>
+                                <th class="p-2 text-left">Created</th>
+                                <th class="p-2 text-left">Pull Command</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-300">
+                            {{range .Tags}}
+                            <tr class="[&>*]:whitespace-nowrap [&>*]:px-4 [&>*]:py-2">
+                                <td class="p-2 text-left">{{.Tag}}
+                                </td>
+                                <td class="p-2 text-xs text-left">{{.CreatedAt}}</td>
+                                <td class="p-2 font-mono text-left"><span
+                                        class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">docker
+                                        pull {{.PullReference}}</span></td>
+                            </tr>
+                            {{end}}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+        <footer class="text-sm text-gray-600 container mx-auto p-8 sticky top-[100vh]">
+            <div class="text-center"></div>
+
+            <div class="clear-both w-full">
+                <hr
+                    class="h-0 overflow-visible mt-8 border-0 border-t border-gray-300 text-gray-300 text-xs leading-5 mb-8">
+                <img class="float-right w-36" src="{{.AbsoluteDir}}static/assets/img/seqera-logo.png" alt="Seqera Logo">
+                <div class="text-sm">
+                    <p class="font-sans font-normal m-0 mb-4 text-gray-500 text-xs leading-5">
+                    <p class="text-slate-700 font-medium">{{.RegistryName}}</p>
+                    <p class="text-gray-400">Seqera</p>
+                    <p class="text-gray-400">Carrer de Marià Aguiló, 28</p>
+                    <p class="text-gray-400">08005 Barcelona</p>
+                    </p>
+                </div>
+                <p class="text-[11px] from-neutral-400 mt-8">
+                    Last updated at: {{.LastUpdated}}
+                </p>
+            </div>
+        </footer>
+    </div>
 </body>
 
 </html>
