@@ -51,6 +51,7 @@ changelog:
     exclude:
       - "^docs:"
       - "^test:"
+      - "^release:"
       - "^chore:"
       - "^build:"
       - "^wip"

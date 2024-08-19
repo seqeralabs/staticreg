@@ -36,7 +36,7 @@ staticreg serve
 ### Run with Docker
 
 ```bash
-docker run --rm -d cr.seqera.io/public/staticreg:0.1.4 serve --registry <registry-url-here>
+docker run --rm -d cr.seqera.io/public/staticreg:0.2.0 serve --registry <registry-url-here>
 ```
 
 ## Install on Kubernetes

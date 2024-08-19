@@ -17,7 +17,7 @@ spec:
       restartPolicy: Always
       containers:
         - name: staticreg
-          image: cr.seqera.io/public/staticreg:0.1.4
+          image: cr.seqera.io/public/staticreg:0.2.0
           command:
             [
               "/staticreg",
