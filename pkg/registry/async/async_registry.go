@@ -47,6 +47,9 @@ type Async struct {
 	underlying *registryimpl.Registry
 	// refreshInterval represents the time to wait to synchronize repositories again after a successful synchronization
 	refreshInterval time.Duration
+	// requestsPerSecond is the maximum amount of requests that this client
+	// will do against the underlying registry in the window of time of 1 second.
+	requestsPerSecond int
 
 	// repos is an in memory list of all the repository names in the registry
 	repos      map[string]registry.RepoData
@@ -57,6 +60,11 @@ type Async struct {
 
 	// imageInfo contains the image information indexed by repo name and tag
 	imageInfo *xsync.MapOf[imageInfoKey, imageInfo]
+
+	// limiter is configured by the requestsPerSecond property
+	// it is used right before sending requests to the registry
+	// so they wait if needed.
+	limiter *rateLimiter
 }
 
 type imageInfoKey struct {
@@ -89,9 +97,12 @@ func (c *Async) Start(ctx context.Context) error {
 	// so that image info is retrieved for each <repo,tag> combination
 	imageInfoRequestsBuffer := make(chan imageInfoRequest, imageInfoRequestsBufSize)
 
+	c.limiter = newRateLimiter(c.requestsPerSecond)
+
 	defer func() {
 		close(repositoryRequestBuffer)
 		close(imageInfoRequestsBuffer)
+		c.limiter.Stop()
 	}()
 
 	g.Go(func() error {
@@ -168,16 +179,13 @@ func (c *Async) handleRepositoryRequest(ctx context.Context, reqChan chan<- imag
 	reqLog := log.With(slog.Any("req", req))
 	reqLog.Debug("handleRepositoryRequest")
 	tags, err := c.underlying.TagList(ctx, req.repo)
-
 	if err != nil {
 		reqLog.Warn("could not list tags for image", logger.ErrAttr(err))
 		return
-
 	}
-
 	c.repositoryTags.Store(req.repo, tags)
-
 	for _, t := range tags {
+		c.limiter.Allow()
 		select {
 		case reqChan <- imageInfoRequest{
 			repo: req.repo,
@@ -188,11 +196,11 @@ func (c *Async) handleRepositoryRequest(ctx context.Context, reqChan chan<- imag
 		}
 	}
 }
-
 func (c *Async) handleImageInfoRequest(ctx context.Context, req imageInfoRequest) {
 	log := logger.FromContext(ctx)
 	reqLog := log.With(slog.Any("req", req))
 	reqLog.Debug("handleImageInfoRequest")
+	c.limiter.Allow()
 	key := imageInfoKey(req)
 
 	// update image info
@@ -213,13 +221,11 @@ func (c *Async) handleImageInfoRequest(ctx context.Context, req imageInfoRequest
 		reqLog.Warn("could not get config file for tag", logger.ErrAttr(err))
 		return
 	}
-
 	if prev, ok := c.repos[req.repo]; ok {
 		if prev.LastUpdatedAt.After(cf.Created.Time) {
 			return
 		}
 	}
-
 	c.reposMutex.Lock()
 	defer c.reposMutex.Unlock()
 	c.repos[req.repo] = registry.RepoData{
@@ -228,7 +234,6 @@ func (c *Async) handleImageInfoRequest(ctx context.Context, req imageInfoRequest
 		PullReference: r,
 	}
 }
-
 func (c *Async) RepoList(ctx context.Context) (repos map[string]registry.RepoData, err error) {
 	return c.repos, nil
 }
@@ -253,13 +258,18 @@ func (c *Async) ImageInfo(ctx context.Context, repo string, tag string) (image v
 	return info.image, info.reference, nil
 }
 
-func New(client *registryimpl.Registry, refreshInterval time.Duration) *Async {
+func New(
+	client *registryimpl.Registry,
+	refreshInterval time.Duration,
+	requestsPerSecond int,
+) *Async {
 	return &Async{
-		underlying:      client,
-		refreshInterval: refreshInterval,
-		repositoryTags:  xsync.NewMapOf[string, []string](),
-		imageInfo:       xsync.NewMapOf[imageInfoKey, imageInfo](),
-		repos:           map[string]registry.RepoData{},
+		underlying:        client,
+		refreshInterval:   refreshInterval,
+		repositoryTags:    xsync.NewMapOf[string, []string](),
+		imageInfo:         xsync.NewMapOf[imageInfoKey, imageInfo](),
+		repos:             map[string]registry.RepoData{},
+		requestsPerSecond: requestsPerSecond,
 	}
 }
 
