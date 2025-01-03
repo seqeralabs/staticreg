@@ -81,8 +81,9 @@ type imageInfoRequest struct {
 }
 
 type imageInfo struct {
-	image     v1.Image
-	reference string
+	image        v1.Image
+	reference    string
+	architecture string
 }
 
 func (c *Async) Start(ctx context.Context) error {
@@ -204,14 +205,15 @@ func (c *Async) handleImageInfoRequest(ctx context.Context, req imageInfoRequest
 	key := imageInfoKey(req)
 
 	// update image info
-	i, r, err := c.underlying.ImageInfo(ctx, req.repo, req.tag)
+	i, r, a, err := c.underlying.ImageInfo(ctx, req.repo, req.tag)
 	if err != nil {
 		reqLog.Warn("could not get image info for tag", logger.ErrAttr(err))
 		return
 	}
 	imageInfo := imageInfo{
-		image:     i,
-		reference: r,
+		image:        i,
+		reference:    r,
+		architecture: a,
 	}
 	c.imageInfo.Store(key, imageInfo)
 

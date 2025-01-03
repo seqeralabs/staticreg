@@ -57,6 +57,7 @@ func (f *Filler) TagData(ctx context.Context, repo string, tag string) (*templat
 		Tag:           tag,
 		PullReference: reference,
 		CreatedAt:     cfg.Created.Format(time.RFC3339),
+		Architecture:  cfg.Architecture,
 	}, nil
 }
 
