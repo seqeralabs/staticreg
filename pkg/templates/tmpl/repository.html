@@ -25,6 +25,7 @@
                             <tr class="bg-gray-100">
                                 <th class="p-2 text-left">Tag</th>
                                 <th class="p-2 text-left">Created</th>
+                                <th class="p-2 text-left">Architecture</th>
                                 <th class="p-2 text-left">Pull Command</th>
                             </tr>
                         </thead>
@@ -34,6 +35,7 @@
                                 <td class="p-2 text-left">{{.Tag}}
                                 </td>
                                 <td class="p-2 text-xs text-left">{{.CreatedAt}}</td>
+                                <td class="p-2 text-xs text-left">{{.Architecture}}</td>
                                 <td class="p-2 font-mono text-left"><span
                                         class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">docker
                                         pull {{.PullReference}}</span></td>

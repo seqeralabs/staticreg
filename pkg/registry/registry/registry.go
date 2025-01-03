@@ -72,17 +72,23 @@ func (c *Registry) TagList(ctx context.Context, repo string) ([]string, error) {
 	return remote.List(rname, remote.WithContext(ctx), uaOption)
 }
 
-func (c *Registry) ImageInfo(ctx context.Context, image string, tag string) (v1.Image, string, error) {
+func (c *Registry) ImageInfo(ctx context.Context, image string, tag string) (v1.Image, string, string, error) {
 	ref, err := name.ParseReference(fmt.Sprintf("%s/%s:%s", c.cfg.Registry, image, tag))
 	if err != nil {
-		return nil, "", err
+		return nil, "", "", err
 	}
 	i, err := remote.Image(ref, remote.WithContext(ctx), uaOption)
 	if err != nil {
-		return nil, "", err
+		return nil, "", "", err
 	}
 
-	return i, ref.String(), nil
+	manifest, err := i.Manifest()
+	architecture := ""
+	if err == nil && manifest.Config.Platform != nil {
+		architecture = manifest.Config.Platform.Architecture
+	}
+
+	return i, ref.String(), architecture, nil
 }
 
 func New(rootCfg *cfg.Root) *Registry {
