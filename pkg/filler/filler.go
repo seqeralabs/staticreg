@@ -62,12 +62,10 @@ func (f *Filler) TagData(ctx context.Context, repo string, tag string) (*templat
 }
 
 func (f *Filler) BaseData() templates.BaseData {
-	imageCount := f.regClient.ImageCount()
 	return templates.BaseData{
 		AbsoluteDir:  f.absoluteDir,
 		RegistryName: f.registryHostname,
 		LastUpdated:  time.Now().Format(time.RFC3339),
-		ImageCount:   imageCount,
 	}
 }
 

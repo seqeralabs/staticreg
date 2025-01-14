@@ -48,7 +48,6 @@ type BaseData struct {
 	AbsoluteDir  string
 	RegistryName string
 	LastUpdated  string
-	ImageCount   int
 }
 
 type IndexData struct {

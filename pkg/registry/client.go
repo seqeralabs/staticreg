@@ -37,7 +37,4 @@ type Client interface {
 
 	// ImageInfo retrieves detailed information about a specific image identified by its repository and tag
 	ImageInfo(ctx context.Context, repo string, tag string) (image v1.Image, reference string, err error)
-
-	// ImageCount returns the number of images in the registry
-	ImageCount() int
 }
