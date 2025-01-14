@@ -261,17 +261,11 @@ func (c *Async) ImageInfo(ctx context.Context, repo string, tag string) (image v
 }
 
 func (c *Async) ImageCount(ctx context.Context) (int, error) {
-	repos := c.repos
 	count := 0
-	c.reposMutex.Lock()
-	defer c.reposMutex.Unlock()
-	for _, repo := range repos {
-		tags, err := c.TagList(ctx, repo.Name)
-		if err != nil {
-			return 0, err
-		}
+	c.repositoryTags.Range(func(_ string, tags []string) bool {
 		count += len(tags)
-	}
+		return true
+	})
 	return count, nil
 }
 

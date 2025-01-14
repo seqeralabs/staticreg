@@ -91,22 +91,6 @@ func (c *Registry) ImageInfo(ctx context.Context, image string, tag string) (v1.
 	return i, ref.String(), architecture, nil
 }
 
-func (c *Registry) ImageCount(ctx context.Context) (int, error) {
-	repos, err := c.RepoList(ctx)
-	if err != nil {
-		return 0, err
-	}
-	count := 0
-	for _, repo := range repos {
-		tags, err := c.TagList(ctx, repo)
-		if err != nil {
-			return 0, err
-		}
-		count += len(tags)
-	}
-	return count, nil
-}
-
 func New(rootCfg *cfg.Root) *Registry {
 	cfg := config{
 		Registry:      rootCfg.RegistryHostname,
