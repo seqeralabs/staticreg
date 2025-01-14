@@ -39,5 +39,5 @@ type Client interface {
 	ImageInfo(ctx context.Context, repo string, tag string) (image v1.Image, reference string, err error)
 
 	// ImageCount returns the number of images in the registry
-	ImageCount(ctx context.Context) (int, error)
+	ImageCount() int
 }

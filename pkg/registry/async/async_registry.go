@@ -260,13 +260,13 @@ func (c *Async) ImageInfo(ctx context.Context, repo string, tag string) (image v
 	return info.image, info.reference, nil
 }
 
-func (c *Async) ImageCount(ctx context.Context) (int, error) {
+func (c *Async) ImageCount() int {
 	count := 0
 	c.repositoryTags.Range(func(_ string, tags []string) bool {
 		count += len(tags)
 		return true
 	})
-	return count, nil
+	return count
 }
 
 func New(
