@@ -65,7 +65,7 @@ type TagData struct {
 	Tag           string
 	PullReference string
 	CreatedAt     string
-	Architecture  string
+	Architectures string
 }
 
 type RepositoryData struct {
