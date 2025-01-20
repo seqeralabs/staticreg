@@ -19,6 +19,7 @@ import (
 	"errors"
 	"log/slog"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/seqeralabs/staticreg/pkg/observability/logger"
@@ -42,7 +43,7 @@ func New(regClient registry.Client, registryHostname string, absoluteDir string)
 }
 
 func (f *Filler) TagData(ctx context.Context, repo string, tag string) (*templates.TagData, error) {
-	imageInfo, reference, err := f.regClient.ImageInfo(ctx, repo, tag)
+	imageInfo, reference, architectures, err := f.regClient.ImageInfo(ctx, repo, tag)
 	if err != nil {
 		return nil, err
 	}
@@ -52,12 +53,18 @@ func (f *Filler) TagData(ctx context.Context, repo string, tag string) (*templat
 		return nil, err
 	}
 
+	Arch := ""
+	if architectures != nil {
+		Arch = strings.Join(architectures, ", ")
+	} else {
+		Arch = cfg.Architecture
+	}
 	return &templates.TagData{
 		Name:          repo,
 		Tag:           tag,
 		PullReference: reference,
 		CreatedAt:     cfg.Created.Format(time.RFC3339),
-		Architecture:  cfg.Architecture,
+		Architectures: Arch,
 	}, nil
 }
 

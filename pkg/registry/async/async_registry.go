@@ -81,9 +81,9 @@ type imageInfoRequest struct {
 }
 
 type imageInfo struct {
-	image        v1.Image
-	reference    string
-	architecture string
+	image         v1.Image
+	reference     string
+	architectures []string
 }
 
 func (c *Async) Start(ctx context.Context) error {
@@ -211,9 +211,9 @@ func (c *Async) handleImageInfoRequest(ctx context.Context, req imageInfoRequest
 		return
 	}
 	imageInfo := imageInfo{
-		image:        i,
-		reference:    r,
-		architecture: a,
+		image:         i,
+		reference:     r,
+		architectures: a,
 	}
 	c.imageInfo.Store(key, imageInfo)
 
@@ -248,16 +248,16 @@ func (c *Async) TagList(ctx context.Context, repo string) ([]string, error) {
 	return tags, nil
 }
 
-func (c *Async) ImageInfo(ctx context.Context, repo string, tag string) (image v1.Image, reference string, err error) {
+func (c *Async) ImageInfo(ctx context.Context, repo string, tag string) (image v1.Image, reference string, architectures []string, err error) {
 	key := imageInfoKey{
 		repo: repo,
 		tag:  tag,
 	}
 	info, ok := c.imageInfo.Load(key)
 	if !ok {
-		return nil, "", ErrImageInfoNotFound
+		return nil, "", nil, ErrImageInfoNotFound
 	}
-	return info.image, info.reference, nil
+	return info.image, info.reference, info.architectures, nil
 }
 
 func New(

@@ -36,5 +36,5 @@ type Client interface {
 	TagList(ctx context.Context, repo string) (tags []string, err error)
 
 	// ImageInfo retrieves detailed information about a specific image identified by its repository and tag
-	ImageInfo(ctx context.Context, repo string, tag string) (image v1.Image, reference string, err error)
+	ImageInfo(ctx context.Context, repo string, tag string) (image v1.Image, reference string, architectures []string, err error)
 }
