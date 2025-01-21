@@ -53,18 +53,18 @@ func (f *Filler) TagData(ctx context.Context, repo string, tag string) (*templat
 		return nil, err
 	}
 
-	Arch := ""
+	architecturesStr := ""
 	if architectures != nil {
-		Arch = strings.Join(architectures, ", ")
+		architecturesStr = strings.Join(architectures, ", ")
 	} else {
-		Arch = cfg.Architecture
+		architecturesStr = cfg.Architecture
 	}
 	return &templates.TagData{
 		Name:          repo,
 		Tag:           tag,
 		PullReference: reference,
 		CreatedAt:     cfg.Created.Format(time.RFC3339),
-		Architectures: Arch,
+		Architectures: architecturesStr,
 	}, nil
 }
 
