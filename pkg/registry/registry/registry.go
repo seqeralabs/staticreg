@@ -85,12 +85,12 @@ func (c *Registry) ImageInfo(ctx context.Context, image string, tag string) (v1.
 	index, err := remote.Index(ref, remote.WithContext(ctx), uaOption)
 	var architectures []string
 	if err == nil {
-		manifest, err := index.IndexManifest()
+		indexManifest, err := index.IndexManifest()
 		if err == nil {
-			manifests := manifest.Manifests
+			manifests := indexManifest.Manifests
 			if manifests != nil {
-				for _, m := range manifests {
-					arch := m.Platform.Architecture
+				for _, manifest := range manifests {
+					arch := manifest.Platform.Architecture
 					if arch != "unknown" {
 						architectures = append(architectures, arch)
 					}
