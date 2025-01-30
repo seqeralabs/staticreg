@@ -3,7 +3,7 @@
 To contribute you need
 
 - [goreleaser](https://goreleaser.com/install/): This is the tool we use to build and release staticreg, used by GNU Make to compile the project
-- [Go >= 1.22.2](https://go.dev/): The Go compiler, used by goreleaser to build binaries
+- [Go](https://go.dev/): The Go compiler, used by goreleaser to build binaries (at least 1.21 so we can use [Go Toolchains](https://go.dev/doc/toolchain))
 - [GNU Make](https://www.gnu.org/software/make/): we use make to hide the details of running multiple commands to get builds done
 - Optional: [Docker](https://docs.docker.com/desktop/install/linux-install/): to build container images and for running the local development dependencies
 
