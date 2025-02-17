@@ -22,4 +22,5 @@ type Root struct {
 	TLSEnabled       bool
 	LogInJSON        bool
 	Verbose          bool
+	WaveServerUrl    string
 }

@@ -17,12 +17,12 @@ package registry
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/google/go-containerregistry/pkg/name"
-	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
-
 	"github.com/seqeralabs/staticreg/pkg/cfg"
+	"github.com/seqeralabs/staticreg/pkg/registry"
 )
 
 const defaultUserAgent = "seqera/staticreg"
@@ -37,6 +37,7 @@ type config struct {
 	Password      string
 	SkipTLSVerify bool
 	TLSEnabled    bool
+	WaveServerUrl string
 }
 
 type Registry struct {
@@ -72,14 +73,14 @@ func (c *Registry) TagList(ctx context.Context, repo string) ([]string, error) {
 	return remote.List(rname, remote.WithContext(ctx), uaOption)
 }
 
-func (c *Registry) ImageInfo(ctx context.Context, image string, tag string) (v1.Image, string, []string, error) {
+func (c *Registry) ImageInfo(ctx context.Context, image string, tag string) (registry.ImageInfo, error) {
 	ref, err := name.ParseReference(fmt.Sprintf("%s/%s:%s", c.cfg.Registry, image, tag))
 	if err != nil {
-		return nil, "", nil, err
+		return registry.ImageInfo{}, err
 	}
 	i, err := remote.Image(ref, remote.WithContext(ctx), uaOption)
 	if err != nil {
-		return nil, "", nil, err
+		return registry.ImageInfo{}, err
 	}
 
 	index, err := remote.Index(ref, remote.WithContext(ctx), uaOption)
@@ -99,7 +100,44 @@ func (c *Registry) ImageInfo(ctx context.Context, image string, tag string) (v1.
 		}
 	}
 
-	return i, ref.String(), architectures, nil
+	archLen := len(architectures)
+	scanUrls := make([]string, archLen)
+	inspectUrls := make([]string, archLen)
+	if architectures != nil {
+		for i, arch := range architectures {
+			scanUrls[i] = c.getScanUrl(ref.String(), arch)
+			inspectUrls[i] = c.getInspectUrl(ref.String(), arch)
+		}
+	} else {
+		cf, err := i.ConfigFile()
+		if err == nil {
+			scanUrls = append(scanUrls, c.getScanUrl(ref.String(), cf.Architecture))
+			inspectUrls = append(inspectUrls, c.getInspectUrl(ref.String(), cf.Architecture))
+		}
+	}
+
+	return registry.ImageInfo{Image: i, Reference: ref.String(), Architectures: architectures, ScanUrls: scanUrls, InspectUrls: inspectUrls}, nil
+}
+
+func (c *Registry) getScanUrl(ref string, platform string) string {
+
+	waveServerUrl := c.cfg.WaveServerUrl
+
+	if !strings.Contains(waveServerUrl, "https://") {
+		waveServerUrl = "https://" + waveServerUrl
+	}
+
+	return fmt.Sprintf("<a href=%s/view/scans?image=%s&platform=%s>%s</a>", waveServerUrl, ref, platform, platform)
+}
+
+func (c *Registry) getInspectUrl(ref string, platform string) string {
+
+	waveServerUrl := c.cfg.WaveServerUrl
+
+	if !strings.Contains(waveServerUrl, "https://") {
+		waveServerUrl = "https://" + waveServerUrl
+	}
+	return fmt.Sprintf("<a href=%s/view/inspect?image=%s&platform=%s>%s</a>", waveServerUrl, ref, platform, platform)
 }
 
 func New(rootCfg *cfg.Root) *Registry {
@@ -109,6 +147,7 @@ func New(rootCfg *cfg.Root) *Registry {
 		Password:      rootCfg.RegistryPassword,
 		TLSEnabled:    rootCfg.TLSEnabled,
 		SkipTLSVerify: rootCfg.SkipTLSVerify,
+		WaveServerUrl: rootCfg.WaveServerUrl,
 	}
 
 	return &Registry{
