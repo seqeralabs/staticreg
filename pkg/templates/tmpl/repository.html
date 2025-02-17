@@ -27,6 +27,8 @@
                                 <th class="p-2 text-left">Created</th>
                                 <th class="p-2 text-left">Architectures</th>
                                 <th class="p-2 text-left">Pull Command</th>
+                                <th class="p-2 text-left">Scan</th>
+                                <th class="p-2 text-left">Inspect</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-300">
@@ -39,6 +41,8 @@
                                 <td class="p-2 font-mono text-left"><span
                                         class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">docker
                                         pull {{.PullReference}}</span></td>
+                                <td class="p-2 font-mono text-left">{{.ScanUrls}}</td>
+                                <td class="p-2 font-mono text-left">{{.InspectUrls}}</td>
                             </tr>
                             {{end}}
                         </tbody>

@@ -17,6 +17,7 @@ package filler
 import (
 	"context"
 	"errors"
+	"html/template"
 	"log/slog"
 	"sort"
 	"strings"
@@ -43,28 +44,41 @@ func New(regClient registry.Client, registryHostname string, absoluteDir string)
 }
 
 func (f *Filler) TagData(ctx context.Context, repo string, tag string) (*templates.TagData, error) {
-	imageInfo, reference, architectures, err := f.regClient.ImageInfo(ctx, repo, tag)
+	imageInfo, err := f.regClient.ImageInfo(ctx, repo, tag)
 	if err != nil {
 		return nil, err
 	}
 
-	cfg, err := imageInfo.ConfigFile()
+	cfg, err := imageInfo.Image.ConfigFile()
 	if err != nil {
 		return nil, err
 	}
 
 	architecturesStr := ""
-	if architectures != nil {
-		architecturesStr = strings.Join(architectures, ", ")
+	if imageInfo.Architectures != nil {
+		architecturesStr = strings.Join(imageInfo.Architectures, ", ")
 	} else {
 		architecturesStr = cfg.Architecture
 	}
+
+	scanUrlStr := ""
+	if imageInfo.ScanUrls != nil {
+		scanUrlStr = strings.Join(imageInfo.ScanUrls, ", ")
+	}
+
+	inspectUrlStr := ""
+	if imageInfo.InspectUrls != nil {
+		inspectUrlStr = strings.Join(imageInfo.InspectUrls, ", ")
+	}
+
 	return &templates.TagData{
 		Name:          repo,
 		Tag:           tag,
-		PullReference: reference,
+		PullReference: imageInfo.Reference,
 		CreatedAt:     cfg.Created.Format(time.RFC3339),
 		Architectures: architecturesStr,
+		ScanUrls:      template.HTML(scanUrlStr),
+		InspectUrls:   template.HTML(inspectUrlStr),
 	}, nil
 }
 

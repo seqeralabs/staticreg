@@ -50,6 +50,7 @@ var rootCmd = &cobra.Command{
 				}
 				return "[not provided]"
 			}()),
+			slog.String("wave-server-url", rootCfg.WaveServerUrl),
 		)
 	},
 }
@@ -63,9 +64,14 @@ func Execute() {
 
 func init() {
 	defaultRegistry := "localhost:5000"
+	defaultWaveServerUrl := "https://wave.seqera.io"
 	envRegistry := os.Getenv("REGISTRY_HOSTNAME")
+	envWaveServerUrl := os.Getenv("WAVE_SERVER_URL")
 	if len(envRegistry) > 0 {
 		defaultRegistry = envRegistry
+	}
+	if len(envWaveServerUrl) > 0 {
+		defaultWaveServerUrl = envWaveServerUrl
 	}
 	rootCmd.PersistentFlags().StringVar(&rootCfg.RegistryHostname, "registry", defaultRegistry, "registry hostname, can be set via the env var REGISTRY_HOSTNAME as well")
 	rootCmd.PersistentFlags().StringVar(&rootCfg.RegistryUser, "user", os.Getenv("REGISTRY_USER"), "registry user to use for authentication against the provided registry, can be set via the env var REGISTRY_USER as well")
@@ -74,4 +80,5 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&rootCfg.TLSEnabled, "tls-enable", false, "enable TLS")
 	rootCmd.PersistentFlags().BoolVar(&rootCfg.LogInJSON, "json-logging", false, "log in JSON")
 	rootCmd.PersistentFlags().BoolVar(&rootCfg.Verbose, "verbose", false, "enable verbose logging")
+	rootCmd.PersistentFlags().StringVar(&rootCfg.WaveServerUrl, "wave-server-url", defaultWaveServerUrl, "URL of the Wave server to use ro access the Wave API, can be set via the env var WAVE_SERVER_URL as well")
 }

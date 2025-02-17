@@ -16,15 +16,22 @@ package registry
 
 import (
 	"context"
-	"time"
-
 	v1 "github.com/google/go-containerregistry/pkg/v1"
+	"time"
 )
 
 type RepoData struct {
 	Name          string
 	PullReference string
 	LastUpdatedAt time.Time
+}
+
+type ImageInfo struct {
+	Image         v1.Image
+	Reference     string
+	Architectures []string
+	ScanUrls      []string
+	InspectUrls   []string
 }
 
 // Client interface defines methods for interacting with a container registry
@@ -36,5 +43,5 @@ type Client interface {
 	TagList(ctx context.Context, repo string) (tags []string, err error)
 
 	// ImageInfo retrieves detailed information about a specific image identified by its repository and tag
-	ImageInfo(ctx context.Context, repo string, tag string) (image v1.Image, reference string, architectures []string, err error)
+	ImageInfo(ctx context.Context, repo string, tag string) (imageInfo ImageInfo, err error)
 }

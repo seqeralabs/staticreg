@@ -21,7 +21,6 @@ import (
 	"sync"
 	"time"
 
-	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/puzpuzpuz/xsync/v3"
 	"golang.org/x/sync/errgroup"
 
@@ -59,7 +58,7 @@ type Async struct {
 	repositoryTags *xsync.MapOf[string, []string]
 
 	// imageInfo contains the image information indexed by repo name and tag
-	imageInfo *xsync.MapOf[imageInfoKey, imageInfo]
+	imageInfo *xsync.MapOf[imageInfoKey, registry.ImageInfo]
 
 	// limiter is configured by the requestsPerSecond property
 	// it is used right before sending requests to the registry
@@ -78,12 +77,6 @@ type repositoryRequest struct {
 type imageInfoRequest struct {
 	repo string
 	tag  string
-}
-
-type imageInfo struct {
-	image         v1.Image
-	reference     string
-	architectures []string
 }
 
 func (c *Async) Start(ctx context.Context) error {
@@ -205,20 +198,16 @@ func (c *Async) handleImageInfoRequest(ctx context.Context, req imageInfoRequest
 	key := imageInfoKey(req)
 
 	// update image info
-	i, r, a, err := c.underlying.ImageInfo(ctx, req.repo, req.tag)
+	imageInfo, err := c.underlying.ImageInfo(ctx, req.repo, req.tag)
 	if err != nil {
 		reqLog.Warn("could not get image info for tag", logger.ErrAttr(err))
 		return
 	}
-	imageInfo := imageInfo{
-		image:         i,
-		reference:     r,
-		architectures: a,
-	}
+
 	c.imageInfo.Store(key, imageInfo)
 
 	// update repos
-	cf, err := imageInfo.image.ConfigFile()
+	cf, err := imageInfo.Image.ConfigFile()
 	if err != nil {
 		reqLog.Warn("could not get config file for tag", logger.ErrAttr(err))
 		return
@@ -233,7 +222,7 @@ func (c *Async) handleImageInfoRequest(ctx context.Context, req imageInfoRequest
 	c.repos[req.repo] = registry.RepoData{
 		Name:          req.repo,
 		LastUpdatedAt: cf.Created.Time,
-		PullReference: r,
+		PullReference: imageInfo.Reference,
 	}
 }
 func (c *Async) RepoList(ctx context.Context) (repos map[string]registry.RepoData, err error) {
@@ -248,16 +237,16 @@ func (c *Async) TagList(ctx context.Context, repo string) ([]string, error) {
 	return tags, nil
 }
 
-func (c *Async) ImageInfo(ctx context.Context, repo string, tag string) (image v1.Image, reference string, architectures []string, err error) {
+func (c *Async) ImageInfo(ctx context.Context, repo string, tag string) (image registry.ImageInfo, err error) {
 	key := imageInfoKey{
 		repo: repo,
 		tag:  tag,
 	}
 	info, ok := c.imageInfo.Load(key)
 	if !ok {
-		return nil, "", nil, ErrImageInfoNotFound
+		return registry.ImageInfo{}, ErrImageInfoNotFound
 	}
-	return info.image, info.reference, info.architectures, nil
+	return info, nil
 }
 
 func New(
@@ -269,7 +258,7 @@ func New(
 		underlying:        client,
 		refreshInterval:   refreshInterval,
 		repositoryTags:    xsync.NewMapOf[string, []string](),
-		imageInfo:         xsync.NewMapOf[imageInfoKey, imageInfo](),
+		imageInfo:         xsync.NewMapOf[imageInfoKey, registry.ImageInfo](),
 		repos:             map[string]registry.RepoData{},
 		requestsPerSecond: requestsPerSecond,
 	}
