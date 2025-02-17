@@ -80,5 +80,5 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&rootCfg.TLSEnabled, "tls-enable", false, "enable TLS")
 	rootCmd.PersistentFlags().BoolVar(&rootCfg.LogInJSON, "json-logging", false, "log in JSON")
 	rootCmd.PersistentFlags().BoolVar(&rootCfg.Verbose, "verbose", false, "enable verbose logging")
-	rootCmd.PersistentFlags().StringVar(&rootCfg.WaveServerUrl, "wave-server-url", defaultWaveServerUrl, "URL of the Wave server to use ro access the Wave API, can be set via the env var WAVE_SERVER_URL as well")
+	rootCmd.PersistentFlags().StringVar(&rootCfg.WaveServerUrl, "wave-server-url", defaultWaveServerUrl, "URL of the Wave server to use or access the Wave API, can be set via the env var WAVE_SERVER_URL as well")
 }

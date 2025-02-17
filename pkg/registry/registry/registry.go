@@ -17,8 +17,6 @@ package registry
 import (
 	"context"
 	"fmt"
-	"strings"
-
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/seqeralabs/staticreg/pkg/cfg"
@@ -99,45 +97,12 @@ func (c *Registry) ImageInfo(ctx context.Context, image string, tag string) (reg
 			}
 		}
 	}
-
-	archLen := len(architectures)
-	scanUrls := make([]string, archLen)
-	inspectUrls := make([]string, archLen)
-	if architectures != nil {
-		for i, arch := range architectures {
-			scanUrls[i] = c.getScanUrl(ref.String(), arch)
-			inspectUrls[i] = c.getInspectUrl(ref.String(), arch)
-		}
-	} else {
-		cf, err := i.ConfigFile()
-		if err == nil {
-			scanUrls = append(scanUrls, c.getScanUrl(ref.String(), cf.Architecture))
-			inspectUrls = append(inspectUrls, c.getInspectUrl(ref.String(), cf.Architecture))
-		}
-	}
-
-	return registry.ImageInfo{Image: i, Reference: ref.String(), Architectures: architectures, ScanUrls: scanUrls, InspectUrls: inspectUrls}, nil
-}
-
-func (c *Registry) getScanUrl(ref string, platform string) string {
-
+	//generate scan url and inspect url
 	waveServerUrl := c.cfg.WaveServerUrl
+	scanUrl := fmt.Sprintf("%s/view/scans?image=%s", waveServerUrl, ref)
+	inspectUrl := fmt.Sprintf("%s/view/inspect?image=%s", waveServerUrl, ref)
 
-	if !strings.Contains(waveServerUrl, "https://") {
-		waveServerUrl = "https://" + waveServerUrl
-	}
-
-	return fmt.Sprintf("<a href=%s/view/scans?image=%s&platform=%s>%s</a>", waveServerUrl, ref, platform, platform)
-}
-
-func (c *Registry) getInspectUrl(ref string, platform string) string {
-
-	waveServerUrl := c.cfg.WaveServerUrl
-
-	if !strings.Contains(waveServerUrl, "https://") {
-		waveServerUrl = "https://" + waveServerUrl
-	}
-	return fmt.Sprintf("<a href=%s/view/inspect?image=%s&platform=%s>%s</a>", waveServerUrl, ref, platform, platform)
+	return registry.ImageInfo{Image: i, Reference: ref.String(), Architectures: architectures, ScanUrl: scanUrl, InspectUrl: inspectUrl}, nil
 }
 
 func New(rootCfg *cfg.Root) *Registry {
