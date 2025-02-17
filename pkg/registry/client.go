@@ -30,8 +30,8 @@ type ImageInfo struct {
 	Image         v1.Image
 	Reference     string
 	Architectures []string
-	ScanUrls      []string
-	InspectUrls   []string
+	ScanUrl       string
+	InspectUrl    string
 }
 
 // Client interface defines methods for interacting with a container registry
