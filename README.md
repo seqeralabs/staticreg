@@ -36,7 +36,7 @@ staticreg serve
 ### Run with Docker
 
 ```bash
-docker run --rm -d cr.seqera.io/public/staticreg:0.2.0 serve --registry <registry-url-here>
+docker run --rm -d cr.seqera.io/public/staticreg:0.2.0 serve --registry <registry-url-here> --wave-server-url <wave-server-url-here>
 ```
 
 ## Install on Kubernetes
@@ -47,7 +47,7 @@ Create a secret with the registry details (the registry you want to list images 
 kubectl create secret generic registry-credentials \
   --from-literal=REGISTRY_USER=<username> \
   --from-literal=REGISTRY_PASSWORD=<password> \
-  --from-literal=REGISTRY_HOSTNAME=<hostname>
+  --from-literal=REGISTRY_HOSTNAME=<hostname> \
 ```
 
 Create the staticreg deployment
