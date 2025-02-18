@@ -47,7 +47,7 @@ Create a secret with the registry details (the registry you want to list images 
 kubectl create secret generic registry-credentials \
   --from-literal=REGISTRY_USER=<username> \
   --from-literal=REGISTRY_PASSWORD=<password> \
-  --from-literal=REGISTRY_HOSTNAME=<hostname> \
+  --from-literal=REGISTRY_HOSTNAME=<hostname>
 ```
 
 Create the staticreg deployment
