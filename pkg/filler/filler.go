@@ -17,6 +17,7 @@ package filler
 import (
 	"context"
 	"errors"
+	"html/template"
 	"log/slog"
 	"sort"
 	"strings"
@@ -60,13 +61,18 @@ func (f *Filler) TagData(ctx context.Context, repo string, tag string) (*templat
 		architecturesStr = cfg.Architecture
 	}
 
+	scanUrlStr := ""
+	if imageInfo.ScanUrls != nil {
+		scanUrlStr = strings.Join(imageInfo.ScanUrls, "")
+	}
+
 	return &templates.TagData{
 		Name:          repo,
 		Tag:           tag,
 		PullReference: imageInfo.Reference,
 		CreatedAt:     cfg.Created.Format(time.RFC3339),
 		Architectures: architecturesStr,
-		ScanUrl:       imageInfo.ScanUrl,
+		ScanUrls:      template.HTML(scanUrlStr),
 		InspectUrl:    imageInfo.InspectUrl,
 	}, nil
 }

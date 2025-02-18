@@ -30,7 +30,7 @@ type ImageInfo struct {
 	Image         v1.Image
 	Reference     string
 	Architectures []string
-	ScanUrl       string
+	ScanUrls      []string
 	InspectUrl    string
 }
 
