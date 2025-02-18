@@ -82,8 +82,10 @@ func (c *Registry) ImageInfo(ctx context.Context, image string, tag string) (reg
 		return registry.ImageInfo{}, err
 	}
 
+	waveServerUrl := c.cfg.WaveServerUrl
 	index, err := remote.Index(ref, remote.WithContext(ctx), uaOption)
 	var architectures []string
+	var scanUrls []string
 	if err == nil {
 		indexManifest, err := index.IndexManifest()
 		if err == nil {
@@ -93,23 +95,17 @@ func (c *Registry) ImageInfo(ctx context.Context, image string, tag string) (reg
 					arch := manifest.Platform.Architecture
 					if arch != "unknown" {
 						architectures = append(architectures, arch)
+						scanUrls = append(scanUrls, c.getScanUrl(ref.Context().Name(), manifest.Digest.String(), arch))
 					}
 				}
 			}
 		}
 	}
-	//generate scan url and inspect url
-	waveServerUrl := c.cfg.WaveServerUrl
-	archLen := len(architectures)
-	scanUrls := make([]string, archLen)
-	if architectures != nil {
-		for i, arch := range architectures {
-			scanUrls[i] = c.getScanUrl(ref.String(), arch)
-		}
-	} else {
+
+	if architectures == nil {
 		cf, err := i.ConfigFile()
 		if err == nil {
-			scanUrls = append(scanUrls, c.getScanUrl(ref.String(), cf.Architecture))
+			scanUrls = append(scanUrls, c.getScanUrl(ref.String(), "", cf.Architecture))
 		}
 	}
 	inspectUrl := fmt.Sprintf("%s/view/inspect?image=%s", waveServerUrl, ref)
@@ -117,11 +113,11 @@ func (c *Registry) ImageInfo(ctx context.Context, image string, tag string) (reg
 	return registry.ImageInfo{Image: i, Reference: ref.String(), Architectures: architectures, ScanUrls: scanUrls, InspectUrl: inspectUrl}, nil
 }
 
-func (c *Registry) getScanUrl(ref string, platform string) string {
+func (c *Registry) getScanUrl(ref string, digest string, platform string) string {
 
 	waveServerUrl := c.cfg.WaveServerUrl
 
-	if !strings.Contains(waveServerUrl, "https://") {
+	if !strings.Contains(waveServerUrl, "https://") && !strings.Contains(waveServerUrl, "http://") {
 		waveServerUrl = "https://" + waveServerUrl
 	}
 
@@ -130,7 +126,11 @@ func (c *Registry) getScanUrl(ref string, platform string) string {
 						<path d="M10.854 5.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 7.793l2.646-2.647a.5.5 0 0 1 .708 0"/>
 					</svg>`
 
-	return fmt.Sprintf("<a href=%s/view/scans?image=%s&platform=%s title=%s>%s</a>", waveServerUrl, ref, platform, platform, scanSvg)
+	url := fmt.Sprintf("<a href=%s/view/scans?image=%s title=%s>%s</a>", waveServerUrl, ref, platform, scanSvg)
+	if digest != "" {
+		url = fmt.Sprintf("<a href=%s/view/scans?image=%s@%s title=%s>%s</a>", waveServerUrl, ref, digest, platform, scanSvg)
+	}
+	return url
 }
 
 func New(rootCfg *cfg.Root) *Registry {
