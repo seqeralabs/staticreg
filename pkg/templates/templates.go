@@ -66,8 +66,8 @@ type TagData struct {
 	PullReference string
 	CreatedAt     string
 	Architectures string
-	ScanUrls      template.HTML
-	InspectUrl    string
+	ScanUrl       template.HTML
+	InspectUrl    template.HTML
 }
 
 type RepositoryData struct {

@@ -17,6 +17,7 @@ package registry
 import (
 	"context"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
+	"html/template"
 	"time"
 )
 
@@ -30,8 +31,8 @@ type ImageInfo struct {
 	Image         v1.Image
 	Reference     string
 	Architectures []string
-	ScanUrls      []string
-	InspectUrl    string
+	ScanUrl       template.HTML
+	InspectUrl    template.HTML
 }
 
 // Client interface defines methods for interacting with a container registry
