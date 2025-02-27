@@ -137,7 +137,7 @@ func (c *Registry) getScanUrl(ref string, digest string, platform string) string
 	}
 
 	script := fmt.Sprintf(
-		`<svg onclick="fetchScan('%s', '%s')" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+		`<svg onclick="fetchScan('%s', '%s')" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16" style="cursor: pointer;">
 				<title>%s</title> 
 				%s</svg>`,
 		apiURL, imageRef, platform, scanIcon,
