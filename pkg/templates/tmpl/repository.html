@@ -75,5 +75,28 @@
         </footer>
     </div>
 </body>
+<script>
+    function fetchScan(url, image) {
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: image,
+            redirect: 'follow'
+        })
+            .then(response => {
+                if (response.redirected) {
+                    window.location.href = response.url;
+                } else {
+                    return response.json();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("Error: " + error.message);
+            });
+    }
+</script>
 
 </html>
