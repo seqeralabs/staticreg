@@ -2,6 +2,8 @@ package server
 
 import (
 	"context"
+	"crypto/sha256"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -14,6 +16,14 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/gin-gonic/gin"
+)
+
+const (
+	robotsTxt = "User-agent: *\nDisallow: /\n"
+)
+
+var (
+	robotsTxtETag = fmt.Sprintf("\"%x\"", sha256.Sum256([]byte(robotsTxt)))
 )
 
 type Server struct {
@@ -66,6 +76,7 @@ func New(
 	ignoredUAMiddleware := ignoreUserAgentMiddleware(ignoredUserAgents)
 
 	r.Use(ignoredUAMiddleware)
+	r.GET("/robots.txt", robotsTxtHandler)
 	htmlRoutes := r.Group("/")
 	{
 		r.GET("/", cache.CacheByRequestURI(store, cacheDuration), serverImpl.RepositoriesListHandler)
@@ -123,4 +134,15 @@ func cacheControlMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Writer.Header().Set("Cache-Control", "public, max-age=604800, immutable")
 	}
+}
+
+func robotsTxtHandler(ctx *gin.Context) {
+	ctx.Header("ETag", robotsTxtETag)
+	ctx.Header("Content-Type", "text/plain")
+	match := ctx.GetHeader("If-None-Match")
+	if len(match) > 0 && match == robotsTxtETag {
+		ctx.Status(http.StatusNotModified)
+		return
+	}
+	ctx.String(http.StatusOK, robotsTxt)
 }
