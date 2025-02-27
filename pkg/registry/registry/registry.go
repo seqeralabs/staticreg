@@ -121,19 +121,27 @@ func (c *Registry) ImageInfo(ctx context.Context, image string, tag string) (reg
 	return registry.ImageInfo{Image: i, Reference: ref.String(), Architectures: architectures, ScanUrl: scanUrl, InspectUrl: inspectUrl}, nil
 }
 
-func (c *Registry) getScanUrl(ref string, digest string, platform string) string {
-
+func (c *Registry) getScanUrl(ref string, digest string) string {
 	waveServerUrl := c.cfg.WaveServerUrl
 	scanIcon, _ := icons.ReadFile("img/scan-icon.svg")
-	if !strings.Contains(waveServerUrl, "https://") && !strings.Contains(waveServerUrl, "http://") {
+
+	if !strings.HasPrefix(waveServerUrl, "https://") && !strings.HasPrefix(waveServerUrl, "http://") {
 		waveServerUrl = "https://" + waveServerUrl
 	}
 
-	url := fmt.Sprintf("<a href=%s/view/scans?image=%s title=%s>%s</a>", waveServerUrl, ref, platform, scanIcon)
+	apiURL := fmt.Sprintf("%s/view/scans", waveServerUrl)
+
+	imageRef := ref
 	if digest != "" {
-		url = fmt.Sprintf("<a href=%s/view/scans?image=%s@%s title=%s>%s</a>", waveServerUrl, ref, digest, platform, scanIcon)
+		imageRef = fmt.Sprintf("%s@%s", ref, digest)
 	}
-	return url
+
+	script := fmt.Sprintf(
+		`<svg onclick="fetchScan('%s', '%s')" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">%s</svg>`,
+		apiURL, imageRef, scanIcon,
+	)
+
+	return script
 }
 
 func New(rootCfg *cfg.Root) *Registry {
