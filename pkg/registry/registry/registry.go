@@ -121,7 +121,7 @@ func (c *Registry) ImageInfo(ctx context.Context, image string, tag string) (reg
 	return registry.ImageInfo{Image: i, Reference: ref.String(), Architectures: architectures, ScanUrl: scanUrl, InspectUrl: inspectUrl}, nil
 }
 
-func (c *Registry) getScanUrl(ref string, digest string) string {
+func (c *Registry) getScanUrl(ref string, digest string, platform string) string {
 	waveServerUrl := c.cfg.WaveServerUrl
 	scanIcon, _ := icons.ReadFile("img/scan-icon.svg")
 
@@ -137,8 +137,10 @@ func (c *Registry) getScanUrl(ref string, digest string) string {
 	}
 
 	script := fmt.Sprintf(
-		`<svg onclick="fetchScan('%s', '%s')" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">%s</svg>`,
-		apiURL, imageRef, scanIcon,
+		`<svg onclick="fetchScan('%s', '%s')" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+				<title>%s</title> 
+				%s</svg>`,
+		apiURL, imageRef, platform, scanIcon,
 	)
 
 	return script
