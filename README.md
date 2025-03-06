@@ -15,9 +15,9 @@ A tool to serve a website from an OCI registry that supports the `/v2/_catalog` 
 
 :white_check_mark: Images list page<br>
 :white_check_mark: Image tags list page<br>
-:white_check_mark: Static website
-:white_check_mark: Image Security Scan
-:white_check_mark: Image Inspect
+:white_check_mark: Static website<br>
+:white_check_mark: Image Security Scan<br>
+:white_check_mark: Image Inspect<br>
 
 <img alt="staticreg screenshot" src="docs/_static/screenshot.png">
 
