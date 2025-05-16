@@ -19,6 +19,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"path"
 	"sort"
 	"strings"
 	"time"
@@ -198,11 +199,19 @@ func (s *StaticregServer) InternalServerErrorHandler(c *gin.Context) {
 }
 
 func (s *StaticregServer) NoRouteHandler(c *gin.Context) {
-	baseData := s.dataFiller.BaseData()
-
-	err := templates.Render404(c.Writer, baseData)
-	if err != nil {
-		c.Error(err)
-		return
+	originalPath := c.Request.URL.Path
+	if strings.HasPrefix(originalPath, "/repo/") {
+		baseData := s.dataFiller.BaseData()
+		err := templates.Render404(c.Writer, baseData)
+		if err != nil {
+			_ = c.Error(err)
+			return
+		}
 	}
+
+	repoPath := path.Join("/repo", originalPath)
+	if c.Request.URL.RawQuery != "" {
+		repoPath += "?" + c.Request.URL.RawQuery
+	}
+	c.Redirect(http.StatusMovedPermanently, repoPath)
 }
