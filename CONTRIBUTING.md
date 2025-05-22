@@ -10,7 +10,7 @@ To contribute you need
 Start a local Registry and push an image to it
 
 ```bash
-docker run -d -p 5000:5000 --name registry registry
+docker run -d -p 5000:5000 --name registry registry:3
 docker pull alpine
 docker tag alpine:latest localhost:5000/alpine:latest
 docker push localhost:5000/alpine:latest

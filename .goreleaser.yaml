@@ -10,6 +10,11 @@ builds:
       - linux
       - windows
       - darwin
+    ldflags:
+      - -s -w
+      - -X github.com/seqeralabs/staticreg/pkg/serviceinfo.version={{.Version}}
+      - -X github.com/seqeralabs/staticreg/pkg/serviceinfo.commit={{.Commit}}
+      - -X github.com/seqeralabs/staticreg/pkg/serviceinfo.date={{.Date}}
 # build container images
 dockers:
   - image_templates:
