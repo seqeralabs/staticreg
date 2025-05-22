@@ -38,7 +38,7 @@ staticreg serve
 ### Run with Docker
 
 ```bash
-docker run --rm -d cr.seqera.io/public/staticreg:0.4.6 serve --registry <registry-url-here> --wave-server-url <wave-server-url-here>
+docker run --rm -d cr.seqera.io/public/staticreg:0.4.7 serve --registry <registry-url-here> --wave-server-url <wave-server-url-here>
 ```
 
 ## Install on Kubernetes
