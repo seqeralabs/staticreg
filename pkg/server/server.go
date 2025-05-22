@@ -12,6 +12,7 @@ import (
 	cache "github.com/chenyahui/gin-cache"
 	"github.com/chenyahui/gin-cache/persist"
 	sloggin "github.com/samber/slog-gin"
+	"github.com/seqeralabs/staticreg/pkg/serviceinfo"
 	"github.com/seqeralabs/staticreg/pkg/static"
 	"golang.org/x/sync/errgroup"
 
@@ -50,6 +51,8 @@ func New(
 
 	r := gin.New()
 
+	si := serviceinfo.New()
+
 	lmConfig := sloggin.Config{
 		DefaultLevel:       slog.LevelDebug,
 		WithUserAgent:      true,
@@ -77,6 +80,7 @@ func New(
 
 	r.Use(ignoredUAMiddleware)
 	r.GET("/robots.txt", robotsTxtHandler)
+	r.GET("/service-info", serviceInfoHandler(si))
 	htmlRoutes := r.Group("/")
 	{
 		r.GET("/", cache.CacheByRequestURI(store, cacheDuration), serverImpl.RepositoriesListHandler)
@@ -145,4 +149,10 @@ func robotsTxtHandler(ctx *gin.Context) {
 		return
 	}
 	ctx.String(http.StatusOK, robotsTxt)
+}
+
+func serviceInfoHandler(si *serviceinfo.ServiceInfo) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		ctx.JSON(http.StatusOK, si)
+	}
 }
