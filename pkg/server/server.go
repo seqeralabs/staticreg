@@ -34,7 +34,10 @@ type Server struct {
 
 type ServerImpl interface {
 	RepositoriesListHandler(ctx *gin.Context)
+	HierarchicalBrowseHandler(ctx *gin.Context)
 	RepositoryHandler(ctx *gin.Context)
+	SearchHandler(ctx *gin.Context)
+	SearchResultsHandler(ctx *gin.Context)
 	NotFoundHandler(ctx *gin.Context)
 	NoRouteHandler(ctx *gin.Context)
 	InternalServerErrorHandler(ctx *gin.Context)
@@ -81,10 +84,18 @@ func New(
 	r.Use(ignoredUAMiddleware)
 	r.GET("/robots.txt", robotsTxtHandler)
 	r.GET("/service-info", serviceInfoHandler(si))
+	
+	apiRoutes := r.Group("/api")
+	{
+		apiRoutes.GET("/search", serverImpl.SearchHandler)
+	}
+	
 	htmlRoutes := r.Group("/")
 	{
 		r.GET("/", cache.CacheByRequestURI(store, cacheDuration), serverImpl.RepositoriesListHandler)
+		r.GET("/browse/*path", cache.CacheByRequestURI(store, cacheDuration), serverImpl.HierarchicalBrowseHandler)
 		r.GET("/repo/*slug", cache.CacheByRequestURI(store, cacheDuration), serverImpl.RepositoryHandler)
+		r.GET("/search", serverImpl.SearchResultsHandler)
 	}
 	htmlRoutes.Use(htmlContentTypeMiddleware)
 

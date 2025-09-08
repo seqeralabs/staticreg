@@ -16,9 +16,10 @@ package registry
 
 import (
 	"context"
-	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"html/template"
 	"time"
+
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 )
 
 type RepoData struct {
@@ -45,4 +46,24 @@ type Client interface {
 
 	// ImageInfo retrieves detailed information about a specific image identified by its repository and tag
 	ImageInfo(ctx context.Context, repo string, tag string) (imageInfo ImageInfo, err error)
+}
+
+// GetImageCreationTime extracts the creation time from an image, checking both
+// the config file and manifest annotations for OCI artifacts
+func GetImageCreationTime(image v1.Image) time.Time {
+	cfg, err := image.ConfigFile()
+	if err == nil && !cfg.Created.IsZero() {
+		return cfg.Created.Time
+	}
+
+	manifest, err := image.Manifest()
+	if err == nil && manifest.Annotations != nil {
+		if createdAnnotation, exists := manifest.Annotations["org.opencontainers.image.created"]; exists {
+			if parsedTime, err := time.Parse(time.RFC3339, createdAnnotation); err == nil {
+				return parsedTime
+			}
+		}
+	}
+
+	return time.Time{}
 }

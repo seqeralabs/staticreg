@@ -207,13 +207,9 @@ func (c *Async) handleImageInfoRequest(ctx context.Context, req imageInfoRequest
 	c.imageInfo.Store(key, imageInfo)
 
 	// update repos
-	cf, err := imageInfo.Image.ConfigFile()
-	if err != nil {
-		reqLog.Warn("could not get config file for tag", logger.ErrAttr(err))
-		return
-	}
+	creationTime := registry.GetImageCreationTime(imageInfo.Image)
 	if prev, ok := c.repos[req.repo]; ok {
-		if prev.LastUpdatedAt.After(cf.Created.Time) {
+		if prev.LastUpdatedAt.After(creationTime) {
 			return
 		}
 	}
@@ -221,7 +217,7 @@ func (c *Async) handleImageInfoRequest(ctx context.Context, req imageInfoRequest
 	defer c.reposMutex.Unlock()
 	c.repos[req.repo] = registry.RepoData{
 		Name:          req.repo,
-		LastUpdatedAt: cf.Created.Time,
+		LastUpdatedAt: creationTime,
 		PullReference: imageInfo.Reference,
 	}
 }

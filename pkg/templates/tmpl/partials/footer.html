@@ -1,0 +1,22 @@
+{{define "footer"}}
+<footer class="text-sm text-gray-600 container mx-auto p-8 sticky top-[100vh]">
+    <div class="text-center"></div>
+
+    <div class="clear-both w-full">
+        <hr
+            class="h-0 overflow-visible mt-8 border-0 border-t border-gray-300 text-gray-300 text-xs leading-5 mb-8">
+        <img class="float-right w-36" src="{{.AbsoluteDir}}static/assets/img/seqera-logo.png" alt="Seqera Logo">
+        <div class="text-sm">
+            <p class="font-sans font-normal m-0 mb-4 text-gray-500 text-xs leading-5">
+            <p class="text-slate-700 font-medium">{{.RegistryName}}</p>
+            <p class="text-gray-400">Seqera</p>
+            <p class="text-gray-400">Carrer de Marià Aguiló, 28</p>
+            <p class="text-gray-400">08005 Barcelona</p>
+            </p>
+        </div>
+        <p class="text-[11px] from-neutral-400 mt-8">
+            Last updated at: {{.LastUpdated}}
+        </p>
+    </div>
+</footer>
+{{end}}
