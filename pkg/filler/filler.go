@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/seqeralabs/staticreg/pkg/observability/logger"
 	"github.com/seqeralabs/staticreg/pkg/registry"
 	"github.com/seqeralabs/staticreg/pkg/registry/errs"
@@ -60,11 +61,15 @@ func (f *Filler) TagData(ctx context.Context, repo string, tag string) (*templat
 		architecturesStr = cfg.Architecture
 	}
 
+	// Get creation date using the common helper function
+	creationTime := registry.GetImageCreationTime(imageInfo.Image)
+	createdAt := creationTime.Format(time.RFC3339)
+
 	return &templates.TagData{
 		Name:          repo,
 		Tag:           tag,
 		PullReference: imageInfo.Reference,
-		CreatedAt:     cfg.Created.Format(time.RFC3339),
+		CreatedAt:     createdAt,
 		Architectures: architecturesStr,
 		ScanUrl:       imageInfo.ScanUrl,
 		InspectUrl:    imageInfo.InspectUrl,
@@ -72,15 +77,29 @@ func (f *Filler) TagData(ctx context.Context, repo string, tag string) (*templat
 }
 
 func (f *Filler) BaseData() templates.BaseData {
+	return f.BaseDataWithQuery("")
+}
+
+func (f *Filler) BaseDataWithQuery(query string) templates.BaseData {
 	return templates.BaseData{
 		AbsoluteDir:  f.absoluteDir,
 		RegistryName: f.registryHostname,
 		LastUpdated:  time.Now().Format(time.RFC3339),
+		Query:        query,
 	}
 }
 
+func (f *Filler) BaseDataFromContext(c *gin.Context) templates.BaseData {
+	query := c.Query("q")
+	return f.BaseDataWithQuery(query)
+}
+
 func (f *Filler) RepoData(ctx context.Context, repo string) (*templates.RepositoryData, error) {
-	baseData := f.BaseData()
+	return f.RepoDataWithQuery(ctx, repo, "")
+}
+
+func (f *Filler) RepoDataWithQuery(ctx context.Context, repo string, query string) (*templates.RepositoryData, error) {
+	baseData := f.BaseDataWithQuery(query)
 
 	log := logger.FromContext(ctx).With(slog.String("repo", repo))
 	tags := []templates.TagData{}

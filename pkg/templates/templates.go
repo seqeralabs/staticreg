@@ -31,6 +31,7 @@ func init() {
 	templateDefs := map[string]string{
 		"index":      "index.html",
 		"repository": "repository.html",
+		"search":     "search.html",
 		"404":        "404.html",
 		"500":        "500.html",
 	}
@@ -39,7 +40,10 @@ func init() {
 		"subtract": func(a, b int) int { return a - b },
 	}
 	for tplName, templateDef := range templateDefs {
-		tpl, err := template.New(templateDef).Funcs(funcMap).ParseFS(templates, path.Join("tmpl", templateDef))
+		tpl, err := template.New(templateDef).Funcs(funcMap).ParseFS(templates,
+			path.Join("tmpl", templateDef),
+			"tmpl/partials/*.html",
+			"tmpl/partials/icons/*.html")
 		if err != nil {
 			panic(err)
 		}
@@ -51,6 +55,7 @@ type BaseData struct {
 	AbsoluteDir  string
 	RegistryName string
 	LastUpdated  string
+	Query        string
 }
 
 type HierarchicalNode struct {
@@ -89,6 +94,7 @@ type RepositoryData struct {
 	PullReference  string
 	Tags           []TagData
 	LastUpdatedAt  string
+	Breadcrumbs    []string
 }
 
 type IndexRepositoryData struct {
@@ -110,5 +116,10 @@ func Render404(w io.Writer, data BaseData) error {
 
 func Render500(w io.Writer, data BaseData) error {
 	tpl := htmlTemplates["500"]
+	return tpl.Execute(w, data)
+}
+
+func RenderSearch(w io.Writer, data interface{}) error {
+	tpl := htmlTemplates["search"]
 	return tpl.Execute(w, data)
 }

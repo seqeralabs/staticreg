@@ -1,0 +1,139 @@
+{{define "header"}}
+<header class="bg-white shadow">
+    <div class="container mx-auto px-4 py-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <!-- Branding and navigation -->
+            <div class="flex flex-col">
+                <div class="flex items-center gap-3 mb-2">
+                    <h1 class="text-2xl lg:text-3xl font-bold tracking-tight text-gray-900">{{.RegistryName}}</h1>
+                </div>
+                <!-- Always show breadcrumb for consistent height -->
+                <div class="min-h-[24px]">
+                    <nav class="flex" aria-label="Breadcrumb">
+                        <ol class="inline-flex items-center space-x-1 md:space-x-2 text-sm">
+                            <li class="inline-flex items-center">
+                                {{if .Breadcrumbs}}
+                                <a href="{{.AbsoluteDir}}" class="text-blue-600 hover:text-blue-800 flex items-center">
+                                    {{template "icons/home" "w-4 h-4 mr-1"}}
+                                    Registry
+                                </a>
+                                {{else}}
+                                <a href="{{.AbsoluteDir}}" class="text-gray-700 font-medium flex items-center">
+                                    {{template "icons/home" "w-4 h-4 mr-1"}}
+                                    Registry
+                                </a>
+                                {{end}}
+                            </li>
+                            {{range $index, $crumb := .Breadcrumbs}}
+                            <li>
+                                <div class="flex items-center">
+                                    {{template "icons/chevron-right" "w-4 h-4 text-gray-400 mx-1"}}
+                                    {{if eq $index (subtract (len $.Breadcrumbs) 1)}}
+                                    <span class="text-gray-700 font-medium">{{$crumb}}</span>
+                                    {{else}}
+                                    <a href="{{$.AbsoluteDir}}browse/{{range $i, $c := $.Breadcrumbs}}{{if le $i $index}}{{if $i}}/{{end}}{{$c}}{{end}}{{end}}" class="text-blue-600 hover:text-blue-800">{{$crumb}}</a>
+                                    {{end}}
+                                </div>
+                            </li>
+                            {{end}}
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+            
+            <!-- Search functionality -->
+            <div class="lg:max-w-md lg:min-w-[320px]">
+                {{template "search_bar" .}}
+            </div>
+        </div>
+    </div>
+</header>
+{{end}}
+
+{{define "repository_header"}}
+<header class="bg-white shadow">
+    <div class="container mx-auto px-4 py-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <!-- Repository branding and navigation -->
+            <div class="flex flex-col">
+                <div class="flex items-center gap-3 mb-2">
+                    <h1 class="text-2xl lg:text-3xl font-bold tracking-tight text-gray-900">
+                        {{.RegistryName}}<span class="text-gray-700">/{{.RepositoryName}}</span>
+                    </h1>
+                </div>
+                <!-- Always reserve space for breadcrumb area to maintain consistent height -->
+                <div class="min-h-[24px]">
+                    {{if .Breadcrumbs}}
+                    <nav class="flex" aria-label="Breadcrumb">
+                        <ol class="inline-flex items-center space-x-1 md:space-x-2 text-sm">
+                            <li class="inline-flex items-center">
+                                <a href="{{.AbsoluteDir}}" class="text-blue-600 hover:text-blue-800 flex items-center">
+                                    {{template "icons/home" "w-4 h-4 mr-1"}}
+                                    Registry
+                                </a>
+                            </li>
+                            {{range $index, $crumb := .Breadcrumbs}}
+                            <li>
+                                <div class="flex items-center">
+                                    {{template "icons/chevron-right" "w-4 h-4 text-gray-400 mx-1"}}
+                                    {{if eq $index (subtract (len $.Breadcrumbs) 1)}}
+                                    <span class="text-gray-700 font-medium">{{$crumb}}</span>
+                                    {{else}}
+                                    <a href="{{$.AbsoluteDir}}browse/{{range $i, $c := $.Breadcrumbs}}{{if le $i $index}}{{if $i}}/{{end}}{{$c}}{{end}}{{end}}" class="text-blue-600 hover:text-blue-800">{{$crumb}}</a>
+                                    {{end}}
+                                </div>
+                            </li>
+                            {{end}}
+                        </ol>
+                    </nav>
+                    {{end}}
+                </div>
+            </div>
+            
+            <!-- Search functionality -->
+            <div class="lg:max-w-md lg:min-w-[320px]">
+                {{template "search_bar" .}}
+            </div>
+        </div>
+    </div>
+</header>
+{{end}}
+
+{{define "search_header"}}
+<header class="bg-white shadow">
+    <div class="container mx-auto px-4 py-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <!-- Search branding and navigation -->
+            <div class="flex flex-col">
+                <div class="flex items-center gap-3 mb-2">
+                    <h1 class="text-2xl lg:text-3xl font-bold tracking-tight text-gray-900">{{.RegistryName}}</h1>
+                </div>
+                <!-- Always reserve space for breadcrumb area to maintain consistent height -->
+                <div class="min-h-[24px]">
+                    <nav class="flex" aria-label="Breadcrumb">
+                        <ol class="inline-flex items-center space-x-1 md:space-x-2 text-sm">
+                            <li class="inline-flex items-center">
+                                <a href="{{.AbsoluteDir}}" class="text-blue-600 hover:text-blue-800 flex items-center">
+                                    {{template "icons/home" "w-4 h-4 mr-1"}}
+                                    Registry
+                                </a>
+                            </li>
+                            <li>
+                                <div class="flex items-center">
+                                    {{template "icons/chevron-right" "w-4 h-4 text-gray-400 mx-1"}}
+                                    <span class="text-gray-700 font-medium">Search</span>
+                                </div>
+                            </li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+            
+            <!-- Search functionality -->
+            <div class="lg:max-w-md lg:min-w-[320px]">
+                {{template "search_bar" .}}
+            </div>
+        </div>
+    </div>
+</header>
+{{end}}

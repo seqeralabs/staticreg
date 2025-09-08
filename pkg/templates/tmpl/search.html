@@ -5,16 +5,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{.AbsoluteDir}}static/assets/css/output.css">
-    <title>{{.RegistryName}}</title>
+    <title>Search Results - {{.RegistryName}}</title>
 </head>
 
 <body class="bg-gray-100 min-w-[240px]">
     <div class="min-h-screen">
-        {{template "header" .}}
+        {{template "search_header" .}}
         <main class="container mx-auto">
             <div class="mx-auto px-4 py-6 sm:px-6 lg:px-8">
+
+                {{if .Query}}
+                <div class="mb-4">
+                    <h2 class="text-xl font-semibold text-gray-900">Search Results for "{{.Query}}"</h2>
+                    <p class="text-gray-600">Found {{.Total}} result{{if ne .Total 1}}s{{end}}</p>
+                </div>
+
+                {{if .Results}}
                 <div class="relative overflow-x-auto">
-                    <table id="imageTable" class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+                    <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
                         <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                             <tr>
                                 <th scope="col" class="px-3 py-3 sm:px-6 w-full sm:w-auto">
@@ -29,25 +37,12 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {{range .Nodes}}
-                            <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 border-gray-200">
-                                <th scope="row" class="px-3 py-4 sm:px-6 font-medium text-gray-900 dark:text-white">
-                                    <a class="text-blue-600 hover:text-blue-800 visited:text-purple-600 flex items-center" 
-                                       href="{{$.AbsoluteDir}}browse/{{if $.CurrentPath}}{{$.CurrentPath}}/{{end}}{{.Name}}">
-                                        {{template "icons/folder" "w-4 h-4 flex-shrink-0 mr-2"}}
-                                        <span class="truncate">{{.Name}}</span>
-                                    </a>
-                                </th>
-                                <td class="px-3 py-4 sm:px-6 text-xs hidden sm:table-cell">-</td>
-                                <td class="px-3 py-4 sm:px-6 text-xs hidden md:table-cell">-</td>
-                            </tr>
-                            {{end}}
-                            {{range .Repositories}}
-                            <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 border-gray-200">
+                            {{range .Results}}
+                            <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 border-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600">
                                 <th scope="row" class="px-3 py-4 sm:px-6 font-medium text-gray-900 dark:text-white">
                                     <div class="flex flex-col">
-                                        <a class="text-blue-600 hover:text-blue-800 visited:text-purple-600 truncate"
-                                           href="{{$.AbsoluteDir}}repo/{{.RepositoryName}}">{{.RepositoryName}}</a>
+                                        <a class="text-blue-600 hover:text-blue-800 visited:text-purple-600 font-medium truncate" 
+                                           href="{{.Path}}">{{.Name}}</a>
                                         <div class="flex flex-col sm:hidden mt-2 space-y-1">
                                             <span class="text-xs text-gray-500">{{.LastUpdatedAt}}</span>
                                             <span class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10 font-mono break-all">
@@ -56,7 +51,7 @@
                                         </div>
                                     </div>
                                 </th>
-                                <td class="px-3 py-4 sm:px-6 text-xs hidden sm:table-cell">{{.LastUpdatedAt}}</td>
+                                <td class="px-3 py-4 sm:px-6 text-xs text-gray-600 dark:text-gray-300 hidden sm:table-cell">{{.LastUpdatedAt}}</td>
                                 <td class="px-3 py-4 sm:px-6 font-mono hidden md:table-cell">
                                     <span class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10 break-all">
                                         docker pull {{.PullReference}}
@@ -67,6 +62,24 @@
                         </tbody>
                     </table>
                 </div>
+                {{else}}
+                <div class="text-center py-12">
+                    <div class="text-gray-400 mb-4">
+                        {{template "icons/search" "w-16 h-16 mx-auto"}}
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">No results found</h3>
+                    <p class="text-gray-600">Try adjusting your search terms or browse all repositories from the <a href="{{.AbsoluteDir}}" class="text-blue-600 hover:text-blue-800">home page</a>.</p>
+                </div>
+                {{end}}
+                {{else}}
+                <div class="text-center py-12">
+                    <div class="text-gray-400 mb-4">
+                        {{template "icons/search" "w-16 h-16 mx-auto"}}
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Search Repositories</h3>
+                    <p class="text-gray-600">Enter a search term above to find repositories in this registry.</p>
+                </div>
+                {{end}}
             </div>
         </main>
 
