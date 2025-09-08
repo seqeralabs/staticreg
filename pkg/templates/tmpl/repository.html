@@ -2,13 +2,11 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{.AbsoluteDir}}static/assets/css/output.css">
+    {{template "head" .}}
     <title>{{.RepositoryName}} | {{.RegistryName}}</title>
 </head>
 
-<body class="bg-gray-100 min-w-[240px]">
+<body class="bg-gray-100 dark:bg-gray-900 min-w-[240px]">
     <div class="min-h-screen">
         {{template "repository_header" .}}
         <main class="container mx-auto">
@@ -52,7 +50,7 @@
                                                 <span class="font-medium">Arch:</span> {{.Architectures}}
                                             </div>
                                             <div class="lg:hidden">
-                                                <span class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10 font-mono break-all">docker pull {{.PullReference}}</span>
+                                                <span class="inline-flex items-center rounded-md bg-gray-50 dark:bg-gray-700 px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-300 ring-1 ring-inset ring-gray-500/10 dark:ring-gray-400/20 font-mono break-all">docker pull {{.PullReference}}</span>
                                             </div>
                                             <div class="flex flex-wrap gap-2 lg:hidden">
                                                 {{if .ScanUrl}}<div class="text-xs font-mono">{{.ScanUrl}}</div>{{end}}
@@ -68,7 +66,7 @@
                                     {{.Architectures}}
                                 </td>
                                 <td class="px-3 py-4 sm:px-6 font-mono hidden lg:table-cell">
-                                    <span class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10 break-all">docker pull {{.PullReference}}</span>
+                                    <span class="inline-flex items-center rounded-md bg-gray-50 dark:bg-gray-700 px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-300 ring-1 ring-inset ring-gray-500/10 dark:ring-gray-400/20 break-all">docker pull {{.PullReference}}</span>
                                 </td>
                                 <td class="px-3 py-4 sm:px-6 font-mono hidden lg:table-cell">
                                     <div class="inline-flex items-center space-x-2">{{.ScanUrl}}</div>

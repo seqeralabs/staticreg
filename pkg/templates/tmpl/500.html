@@ -2,20 +2,19 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{.AbsoluteDir}}static/assets/css/output.css">
+    {{template "head" .}}
     <title>Internal Server Error | {{.RegistryName}}</title>
 </head>
 
-<body class="bg-gray-100">
-    <div class="h-screen flex items-center justify-center bg-gray-50">
+<body class="bg-gray-100 dark:bg-gray-900">
+    <div class="h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-800">
         <div class="max-w-md mx-auto text-center">
-            <h1 class="text-4xl font-bold mb-4">500 Internal Server Error</h1>
-            <p class="text-lg text-gray-600 mb-8">Something went wrong on our end.</p>
+            <h1 class="text-4xl font-bold mb-4 text-gray-900 dark:text-white">500 Internal Server Error</h1>
+            <p class="text-lg text-gray-600 dark:text-gray-400 mb-8">Something went wrong on our end.</p>
         </div>
     </div>
 
+    <script src="{{.AbsoluteDir}}static/assets/js/app.js"></script>
 </body>
 
 </html>

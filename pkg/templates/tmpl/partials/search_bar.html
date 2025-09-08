@@ -1,22 +1,22 @@
 {{define "search_bar"}}
 <div>
     <form method="GET" action="/search" class="w-full">   
-        <label for="searchInput" class="mb-2 text-sm font-medium text-gray-900 sr-only">Search</label>
+        <label for="searchInput" class="mb-2 text-sm font-medium text-gray-900 dark:text-white sr-only">Search</label>
         <div class="relative">
             <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
-                {{template "icons/search" "w-4 h-4 text-gray-500"}}
+                {{template "icons/search" "w-4 h-4 text-gray-500 dark:text-gray-400"}}
             </div>
             <input type="search" 
                    id="searchInput" 
                    name="q" 
                    value="{{.Query}}"
-                   class="block w-full p-4 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500" 
+                   class="block w-full p-4 ps-10 text-sm text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 focus:ring-blue-500 focus:border-blue-500 dark:placeholder-gray-400" 
                    placeholder="Search for repositories..." 
                    autocomplete="off" />
-            <button type="submit" class="text-white absolute end-2.5 bottom-2.5 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2">Search</button>
+            <button type="submit" class="text-white absolute end-2.5 bottom-2.5 bg-blue-700 hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-lg text-sm px-4 py-2">Search</button>
             
             <!-- Autocomplete Dropdown -->
-            <div id="autocomplete" class="absolute z-20 w-full bg-white border border-gray-200 rounded-lg mt-2 max-h-60 overflow-y-auto hidden shadow-xl"></div>
+            <div id="autocomplete" class="absolute z-20 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg mt-2 max-h-60 overflow-y-auto hidden shadow-xl"></div>
         </div>
     </form>
 </div>
