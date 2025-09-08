@@ -34,6 +34,7 @@ type Server struct {
 
 type ServerImpl interface {
 	RepositoriesListHandler(ctx *gin.Context)
+	HierarchicalBrowseHandler(ctx *gin.Context)
 	RepositoryHandler(ctx *gin.Context)
 	NotFoundHandler(ctx *gin.Context)
 	NoRouteHandler(ctx *gin.Context)
@@ -84,6 +85,7 @@ func New(
 	htmlRoutes := r.Group("/")
 	{
 		r.GET("/", cache.CacheByRequestURI(store, cacheDuration), serverImpl.RepositoriesListHandler)
+		r.GET("/browse/*path", cache.CacheByRequestURI(store, cacheDuration), serverImpl.HierarchicalBrowseHandler)
 		r.GET("/repo/*slug", cache.CacheByRequestURI(store, cacheDuration), serverImpl.RepositoryHandler)
 	}
 	htmlRoutes.Use(htmlContentTypeMiddleware)

@@ -54,8 +54,13 @@ func New(
 }
 
 func (s *StaticregServer) RepositoriesListHandler(c *gin.Context) {
-	repositoriesData := []templates.IndexRepositoryData{}
+	s.HierarchicalBrowseHandler(c)
+}
+
+func (s *StaticregServer) HierarchicalBrowseHandler(c *gin.Context) {
 	baseData := s.dataFiller.BaseData()
+	currentPath := strings.TrimPrefix(c.Param("path"), "/")
+	currentPath = strings.TrimSuffix(currentPath, "/")
 
 	repos, err := s.regClient.RepoList(c)
 	if err != nil {
@@ -63,32 +68,16 @@ func (s *StaticregServer) RepositoriesListHandler(c *gin.Context) {
 		return
 	}
 
-	sortedRepos := make([]string, len(repos))
-	i := 0
-	for k := range repos {
-		sortedRepos[i] = k
-		i++
-	}
-	sort.Strings(sortedRepos)
-
-	for _, rk := range sortedRepos {
-		repo, ok := repos[rk]
-		if !ok {
-			continue
-		}
-		idata := templates.IndexRepositoryData{
-			BaseData:       baseData,
-			RepositoryName: repo.Name,
-			PullReference:  repo.PullReference,
-			LastUpdatedAt:  repo.LastUpdatedAt.Format(time.RFC3339),
-		}
-		repositoriesData = append(repositoriesData, idata)
-	}
+	hierarchy, repositories := s.buildHierarchy(repos, currentPath, baseData)
+	breadcrumbs := s.buildBreadcrumbs(currentPath)
 
 	var buf bytes.Buffer
 	err = templates.RenderIndex(&buf, templates.IndexData{
 		BaseData:     baseData,
-		Repositories: repositoriesData,
+		CurrentPath:  currentPath,
+		Breadcrumbs:  breadcrumbs,
+		Nodes:        hierarchy,
+		Repositories: repositories,
 	})
 
 	if err != nil {
@@ -102,6 +91,84 @@ func (s *StaticregServer) RepositoriesListHandler(c *gin.Context) {
 		c.Error(err)
 		return
 	}
+}
+
+func (s *StaticregServer) buildHierarchy(repos map[string]registry.RepoData, currentPath string, baseData templates.BaseData) ([]*templates.HierarchicalNode, []templates.IndexRepositoryData) {
+	folders := make(map[string]*templates.HierarchicalNode)
+	var repositories []templates.IndexRepositoryData
+
+	sortedRepos := make([]string, 0, len(repos))
+	for k := range repos {
+		sortedRepos = append(sortedRepos, k)
+	}
+	sort.Strings(sortedRepos)
+
+	for _, repoName := range sortedRepos {
+		repo := repos[repoName]
+		parts := strings.Split(repoName, "/")
+
+		if currentPath == "" {
+			if len(parts) == 1 {
+				repositories = append(repositories, templates.IndexRepositoryData{
+					BaseData:       baseData,
+					RepositoryName: repo.Name,
+					PullReference:  repo.PullReference,
+					LastUpdatedAt:  repo.LastUpdatedAt.Format(time.RFC3339),
+				})
+			} else {
+				firstPart := parts[0]
+				if folders[firstPart] == nil {
+					folders[firstPart] = &templates.HierarchicalNode{
+						Name:     firstPart,
+						IsFolder: true,
+					}
+				}
+			}
+		} else {
+			pathParts := strings.Split(currentPath, "/")
+			if len(parts) > len(pathParts) && strings.HasPrefix(repoName, currentPath+"/") {
+				remainingPath := strings.TrimPrefix(repoName, currentPath+"/")
+				remainingParts := strings.Split(remainingPath, "/")
+
+				if len(remainingParts) == 1 {
+					repositories = append(repositories, templates.IndexRepositoryData{
+						BaseData:       baseData,
+						RepositoryName: repo.Name,
+						PullReference:  repo.PullReference,
+						LastUpdatedAt:  repo.LastUpdatedAt.Format(time.RFC3339),
+					})
+				} else {
+					firstPart := remainingParts[0]
+					if folders[firstPart] == nil {
+						folders[firstPart] = &templates.HierarchicalNode{
+							Name:     firstPart,
+							IsFolder: true,
+						}
+					}
+				}
+			}
+		}
+	}
+
+	var nodes []*templates.HierarchicalNode
+	for _, folder := range folders {
+		nodes = append(nodes, folder)
+	}
+	sort.Slice(nodes, func(i, j int) bool {
+		return nodes[i].Name < nodes[j].Name
+	})
+
+	return nodes, repositories
+}
+
+func (s *StaticregServer) buildBreadcrumbs(currentPath string) []string {
+	if currentPath == "" {
+		return []string{}
+	}
+	parts := strings.Split(currentPath, "/")
+	breadcrumbs := make([]string, len(parts))
+	copy(breadcrumbs, parts)
+	return breadcrumbs
 }
 
 func (s *StaticregServer) RepositoryHandler(c *gin.Context) {

@@ -17,6 +17,28 @@
         </header>
         <main class="container mx-auto">
             <div class="mx-auto px-4 py-6 sm:px-6 lg:px-8">
+                {{if .Breadcrumbs}}
+                <nav class="flex mb-4" aria-label="Breadcrumb">
+                    <ol class="inline-flex items-center space-x-1 md:space-x-3">
+                        <li class="inline-flex items-center">
+                            <a href="{{.AbsoluteDir}}" class="text-blue-600 hover:text-blue-800">🏠</a>
+                        </li>
+                        {{range $index, $crumb := .Breadcrumbs}}
+                        <li>
+                            <div class="flex items-center">
+                                <span class="text-gray-400 mx-2">/</span>
+                                {{if eq $index (subtract (len $.Breadcrumbs) 1)}}
+                                <span class="text-gray-500">{{$crumb}}</span>
+                                {{else}}
+                                <a href="{{$.AbsoluteDir}}browse/{{range $i, $c := $.Breadcrumbs}}{{if le $i $index}}{{if $i}}/{{end}}{{$c}}{{end}}{{end}}" class="text-blue-600 hover:text-blue-800">{{$crumb}}</a>
+                                {{end}}
+                            </div>
+                        </li>
+                        {{end}}
+                    </ol>
+                </nav>
+                {{end}}
+
                 <input type="text" id="searchInput" onkeyup="searchImages()" placeholder="Search for images.."
                     class="w-full p-2 mb-4 border border-gray-300 focus:outline-none focus:ring focus:ring-blue-400">
                 <div class="overflow-x-auto">
@@ -29,18 +51,30 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-300">
+                            {{range .Nodes}}
+                            <tr>
+                                <td class="p-2 text-left break-words whitespace-pre-line">
+                                    <a class="text-blue-600 hover:text-blue-800 visited:text-purple-600" 
+                                       href="{{$.AbsoluteDir}}browse/{{if $.CurrentPath}}{{$.CurrentPath}}/{{end}}{{.Name}}">
+                                        📁 {{.Name}}
+                                    </a>
+                                </td>
+                                <td class="p-2 text-xs text-left min-w-lg">-</td>
+                                <td class="p-2 text-xs text-left">-</td>
+                            </tr>
+                            {{end}}
                             {{range .Repositories}}
                             <tr>
-                                <td class="p-2 text-left  break-words whitespace-pre-line"><a
-                                        class="text-blue-600 hover:text-blue-800 visited:text-purple-600"
-                                        href="{{$.AbsoluteDir}}repo/{{.RepositoryName}}">{{.RepositoryName}}</a>
+                                <td class="p-2 text-left break-words whitespace-pre-line">
+                                    <a class="text-blue-600 hover:text-blue-800 visited:text-purple-600"
+                                       href="{{$.AbsoluteDir}}repo/{{.RepositoryName}}">{{.RepositoryName}}</a>
                                 </td>
-                                <td class="p-2 text-xs text-left min-w-lg">{{.LastUpdatedAt}}
+                                <td class="p-2 text-xs text-left min-w-lg">{{.LastUpdatedAt}}</td>
+                                <td class="p-2 font-mono text-left whitespace-nowrap">
+                                    <span class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">
+                                        docker pull {{.PullReference}}
+                                    </span>
                                 </td>
-
-                                <td class="p-2 font-mono text-left whitespace-nowrap"><span
-                                        class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">docker
-                                        pull {{.PullReference}}</span></td>
                             </tr>
                             {{end}}
                         </tbody>

@@ -35,8 +35,11 @@ func init() {
 		"500":        "500.html",
 	}
 	htmlTemplates = make(map[string]*template.Template, len(templateDefs))
+	funcMap := template.FuncMap{
+		"subtract": func(a, b int) int { return a - b },
+	}
 	for tplName, templateDef := range templateDefs {
-		tpl, err := template.New(templateDef).ParseFS(templates, path.Join("tmpl", templateDef))
+		tpl, err := template.New(templateDef).Funcs(funcMap).ParseFS(templates, path.Join("tmpl", templateDef))
 		if err != nil {
 			panic(err)
 		}
@@ -50,8 +53,18 @@ type BaseData struct {
 	LastUpdated  string
 }
 
+type HierarchicalNode struct {
+	Name         string
+	IsFolder     bool
+	Children     []*HierarchicalNode
+	Repositories []IndexRepositoryData
+}
+
 type IndexData struct {
 	BaseData
+	CurrentPath  string
+	Breadcrumbs  []string
+	Nodes        []*HierarchicalNode
 	Repositories []IndexRepositoryData
 }
 
