@@ -68,6 +68,12 @@ func (s *StaticregServer) HierarchicalBrowseHandler(c *gin.Context) {
 		return
 	}
 
+	// Validate that the current path exists in the repository hierarchy
+	if currentPath != "" && !s.pathExists(repos, currentPath) {
+		_ = c.AbortWithError(http.StatusNotFound, servererrors.ErrPathNotFound)
+		return
+	}
+
 	hierarchy, repositories := s.buildHierarchy(repos, currentPath, baseData)
 	breadcrumbs := s.buildBreadcrumbs(currentPath)
 
@@ -159,6 +165,21 @@ func (s *StaticregServer) buildHierarchy(repos map[string]registry.RepoData, cur
 	})
 
 	return nodes, repositories
+}
+
+// todo(fntlnz): I don't like this, needs to be optimized but it will go away
+// once https://github.com/seqeralabs/staticreg/issues/34 is implemented.
+func (s *StaticregServer) pathExists(repos map[string]registry.RepoData, currentPath string) bool {
+	pathPrefix := currentPath + "/"
+	for repoName := range repos {
+		if repoName == currentPath {
+			return true
+		}
+		if strings.HasPrefix(repoName, pathPrefix) {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *StaticregServer) buildBreadcrumbs(currentPath string) []string {
@@ -378,19 +399,10 @@ func (s *StaticregServer) SearchResultsHandler(c *gin.Context) {
 }
 
 func (s *StaticregServer) NoRouteHandler(c *gin.Context) {
-	originalPath := c.Request.URL.Path
-	if strings.HasPrefix(originalPath, "/repo/") {
-		baseData := s.dataFiller.BaseDataFromContext(c)
-		err := templates.Render404(c.Writer, baseData)
-		if err != nil {
-			_ = c.Error(err)
-			return
-		}
+	baseData := s.dataFiller.BaseDataFromContext(c)
+	err := templates.Render404(c.Writer, baseData)
+	if err != nil {
+		_ = c.Error(err)
+		return
 	}
-
-	repoPath := path.Join("/repo", originalPath)
-	if c.Request.URL.RawQuery != "" {
-		repoPath += "?" + c.Request.URL.RawQuery
-	}
-	c.Redirect(http.StatusMovedPermanently, repoPath)
 }

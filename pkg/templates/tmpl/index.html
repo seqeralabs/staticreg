@@ -2,13 +2,11 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{.AbsoluteDir}}static/assets/css/output.css">
+    {{template "head" .}}
     <title>{{.RegistryName}}</title>
 </head>
 
-<body class="bg-gray-100 min-w-[240px]">
+<body class="bg-gray-100 dark:bg-gray-900 min-w-[240px]">
     <div class="min-h-screen">
         {{template "header" .}}
         <main class="container mx-auto">
@@ -32,7 +30,7 @@
                             {{range .Nodes}}
                             <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 border-gray-200">
                                 <th scope="row" class="px-3 py-4 sm:px-6 font-medium text-gray-900 dark:text-white">
-                                    <a class="text-blue-600 hover:text-blue-800 visited:text-purple-600 flex items-center" 
+                                    <a class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300  flex items-center" 
                                        href="{{$.AbsoluteDir}}browse/{{if $.CurrentPath}}{{$.CurrentPath}}/{{end}}{{.Name}}">
                                         {{template "icons/folder" "w-4 h-4 flex-shrink-0 mr-2"}}
                                         <span class="truncate">{{.Name}}</span>
@@ -46,11 +44,11 @@
                             <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 border-gray-200">
                                 <th scope="row" class="px-3 py-4 sm:px-6 font-medium text-gray-900 dark:text-white">
                                     <div class="flex flex-col">
-                                        <a class="text-blue-600 hover:text-blue-800 visited:text-purple-600 truncate"
+                                        <a class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 truncate max-w-xs inline-block"
                                            href="{{$.AbsoluteDir}}repo/{{.RepositoryName}}">{{.RepositoryName}}</a>
                                         <div class="flex flex-col sm:hidden mt-2 space-y-1">
                                             <span class="text-xs text-gray-500">{{.LastUpdatedAt}}</span>
-                                            <span class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10 font-mono break-all">
+                                            <span class="inline-flex items-center rounded-md bg-gray-50 dark:bg-gray-700 px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-300 ring-1 ring-inset ring-gray-500/10 dark:ring-gray-400/20 font-mono break-all">
                                                 docker pull {{.PullReference}}
                                             </span>
                                         </div>
@@ -58,7 +56,7 @@
                                 </th>
                                 <td class="px-3 py-4 sm:px-6 text-xs hidden sm:table-cell">{{.LastUpdatedAt}}</td>
                                 <td class="px-3 py-4 sm:px-6 font-mono hidden md:table-cell">
-                                    <span class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10 break-all">
+                                    <span class="inline-flex items-center rounded-md bg-gray-50 dark:bg-gray-700 px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-300 ring-1 ring-inset ring-gray-500/10 dark:ring-gray-400/20 break-all">
                                         docker pull {{.PullReference}}
                                     </span>
                                 </td>

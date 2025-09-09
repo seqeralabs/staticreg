@@ -18,3 +18,4 @@ import "errors"
 
 var ErrRepositoryNotFound = errors.New("repository not found")
 var ErrSlugTooShort = errors.New("slug too short")
+var ErrPathNotFound = errors.New("path not found")

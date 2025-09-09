@@ -11,9 +11,9 @@
             }
 
             autocompleteDiv.innerHTML = results.map(result => 
-                `<div class="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors duration-150" onclick="selectResult('${result.name}', '${result.path}')">
-                    <div class="font-semibold text-gray-900 mb-1">${result.name}</div>
-                    <div class="text-sm text-gray-500">Last updated: ${result.lastUpdatedAt}</div>
+                `<div class="px-4 py-3 hover:bg-blue-50 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-100 dark:border-gray-600 last:border-b-0 transition-colors duration-150" onclick="selectResult('${result.name}', '${result.path}')">
+                    <div class="font-semibold text-gray-900 dark:text-white mb-1">${result.name}</div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400">Last updated: ${result.lastUpdatedAt}</div>
                 </div>`
             ).join('');
             
@@ -54,7 +54,7 @@
         });
 
         searchInput.addEventListener('blur', hideAutocomplete);
-        searchInput.addEventListener('focus', function(e) {
+        searchInput.addEventListener('focus', function (e) {
             const query = e.target.value.trim();
             if (query.length >= 2) {
                 // Trigger search again on focus if there's already a query
@@ -87,11 +87,11 @@
         function updateSelection(items) {
             items.forEach((item, index) => {
                 if (index === currentSelection) {
-                    item.classList.add('bg-blue-100');
-                    item.classList.remove('hover:bg-blue-50');
+                    item.classList.add('bg-blue-100', 'dark:bg-gray-600');
+                    item.classList.remove('hover:bg-blue-50', 'dark:hover:bg-gray-700');
                 } else {
-                    item.classList.remove('bg-blue-100');
-                    item.classList.add('hover:bg-blue-50');
+                    item.classList.remove('bg-blue-100', 'dark:bg-gray-600');
+                    item.classList.add('hover:bg-blue-50', 'dark:hover:bg-gray-700');
                 }
             });
         }
@@ -119,4 +119,22 @@
                 alert("Error: " + error.message);
             });
     }
+
+    // Dark mode toggle functionality
+    function initDarkModeToggle() {
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        if (!darkModeToggle) return;
+
+        darkModeToggle.addEventListener('click', () => {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        });
+    }
+
+    // Initialize dark mode toggle when DOM is loaded
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initDarkModeToggle);
+        return;
+    }
+    initDarkModeToggle();
 })();
