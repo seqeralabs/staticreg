@@ -109,7 +109,7 @@
         })
             .then(response => {
                 if (response.redirected) {
-                    window.location.href = response.url;
+                    window.open(response.url, '_blank', 'noopener,noreferrer');
                 } else {
                     return response.json();
                 }
