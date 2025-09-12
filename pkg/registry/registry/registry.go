@@ -114,7 +114,7 @@ func (c *Registry) ImageInfo(ctx context.Context, image string, tag string) (reg
 		}
 	}
 	inspectIcon, _ := icons.ReadFile("img/inspect-icon.svg")
-	inspectUrl := template.HTML(fmt.Sprintf("<a href=%s/view/inspect?image=%s>%s</a>", waveServerUrl, ref, inspectIcon))
+	inspectUrl := template.HTML(fmt.Sprintf("<a href=%s/view/inspect?image=%s target=\"_blank\" rel=\"noopener noreferrer\">%s</a>", waveServerUrl, ref, inspectIcon))
 
 	scanUrl := template.HTML(strings.Join(scanUrls, ""))
 
