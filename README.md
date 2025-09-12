@@ -19,7 +19,7 @@ A tool to serve a website from an OCI registry that supports the `/v2/_catalog` 
 :white_check_mark: Image Security Scan<br>
 :white_check_mark: Image Inspect<br>
 
-<img alt="staticreg screenshot" src="docs/_static/screenshot.png">
+<img alt="staticreg screenshot" src="docs/_static/staticreg.png">
 
 ## Install staticreg
 
