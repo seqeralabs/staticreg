@@ -1,3 +1,14 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.seqera-logo::before {
+  content: url('/static/assets/img/seqera_logo_color.svg');
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.dark .seqera-logo::before {
+  content: url('/static/assets/img/seqera_logo_color_darkbg.svg');
+}
