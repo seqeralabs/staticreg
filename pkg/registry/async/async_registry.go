@@ -259,6 +259,25 @@ func (c *Async) ClearCache() {
 	c.imageInfo.Clear()
 }
 
+func (c *Async) ClearRepositoryCache(repository string) {
+	c.reposMutex.Lock()
+	defer c.reposMutex.Unlock()
+	
+	// Remove specific repository from the list
+	delete(c.repos, repository)
+	
+	// Remove repository tags
+	c.repositoryTags.Delete(repository)
+	
+	// Remove all image info for this repository
+	c.imageInfo.Range(func(key imageInfoKey, value registry.ImageInfo) bool {
+		if key.repo == repository {
+			c.imageInfo.Delete(key)
+		}
+		return true
+	})
+}
+
 func New(
 	client *registryimpl.Registry,
 	refreshInterval time.Duration,

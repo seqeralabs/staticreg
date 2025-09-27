@@ -15,6 +15,7 @@ import (
 	"github.com/seqeralabs/staticreg/pkg/registry/async"
 	"github.com/seqeralabs/staticreg/pkg/serviceinfo"
 	"github.com/seqeralabs/staticreg/pkg/static"
+	"github.com/seqeralabs/staticreg/pkg/webhook"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/gin-gonic/gin"
@@ -92,7 +93,7 @@ func New(
 	apiRoutes := r.Group("/api")
 	{
 		apiRoutes.GET("/search", serverImpl.SearchHandler)
-		apiRoutes.POST("/cache/invalidate", cacheInvalidateHandler(cacheManager))
+		apiRoutes.POST("/webhook/registry", registryWebhookHandler(cacheManager, log))
 	}
 	
 	htmlRoutes := r.Group("/")
@@ -174,13 +175,64 @@ func serviceInfoHandler(si *serviceinfo.ServiceInfo) gin.HandlerFunc {
 	}
 }
 
-func cacheInvalidateHandler(cacheManager *CacheManager) gin.HandlerFunc {
+func registryWebhookHandler(cacheManager *CacheManager, log *slog.Logger) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		err := cacheManager.ClearAll()
-		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to invalidate cache"})
+		var envelope webhook.DistributionEventEnvelope
+		if err := ctx.ShouldBindJSON(&envelope); err != nil {
+			log.Warn("Failed to parse webhook payload", "error", err)
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON payload"})
 			return
 		}
-		ctx.JSON(http.StatusOK, gin.H{"message": "Cache invalidated successfully"})
+
+		processedRepos := make(map[string]bool)
+		eventsProcessed := 0
+
+		for _, event := range envelope.Events {
+			// Only process push events for manifests (final step of container push)
+			if !event.IsManifestPush() {
+				log.Debug("Skipping non-manifest push event", 
+					"action", event.Action, 
+					"mediaType", event.Target.MediaType,
+					"repository", event.Target.Repository)
+				continue
+			}
+
+			repository := event.Target.Repository
+			
+			// Avoid duplicate processing for the same repository in this batch
+			if processedRepos[repository] {
+				log.Debug("Repository already processed in this batch", "repository", repository)
+				continue
+			}
+
+			log.Info("Processing push event for repository", 
+				"repository", repository, 
+				"digest", event.Target.Digest,
+				"tag", event.Target.Tag)
+
+			// Invalidate cache for this specific repository
+			err := cacheManager.InvalidateRepository(repository)
+			if err != nil {
+				log.Error("Failed to invalidate repository cache", 
+					"repository", repository, 
+					"error", err)
+				// Continue processing other repositories even if one fails
+				continue
+			}
+
+			processedRepos[repository] = true
+			eventsProcessed++
+		}
+
+		log.Info("Webhook processing completed", 
+			"totalEvents", len(envelope.Events),
+			"eventsProcessed", eventsProcessed,
+			"repositoriesInvalidated", len(processedRepos))
+
+		ctx.JSON(http.StatusOK, gin.H{
+			"message": "Webhook processed successfully",
+			"eventsProcessed": eventsProcessed,
+			"repositoriesInvalidated": len(processedRepos),
+		})
 	}
 }
