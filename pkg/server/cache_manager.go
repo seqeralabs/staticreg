@@ -49,3 +49,15 @@ func (cm *CacheManager) ClearAll() error {
 	
 	return nil
 }
+
+func (cm *CacheManager) InvalidateRepository(repository string) error {
+	// Clear specific repository data from the async registry cache
+	cm.asyncRegistry.ClearRepositoryCache(repository)
+	cm.logger.Info("Repository cache invalidated", "repository", repository)
+
+	// For HTTP response cache, we can't selectively clear by repository,
+	// but the cache will naturally expire based on cache-duration setting
+	// TODO: Consider implementing selective HTTP cache invalidation
+	
+	return nil
+}
