@@ -12,6 +12,7 @@ import (
 	cache "github.com/chenyahui/gin-cache"
 	"github.com/chenyahui/gin-cache/persist"
 	sloggin "github.com/samber/slog-gin"
+	"github.com/seqeralabs/staticreg/pkg/registry/async"
 	"github.com/seqeralabs/staticreg/pkg/serviceinfo"
 	"github.com/seqeralabs/staticreg/pkg/static"
 	"golang.org/x/sync/errgroup"
@@ -28,8 +29,9 @@ var (
 )
 
 type Server struct {
-	server *http.Server
-	gin    *gin.Engine
+	server       *http.Server
+	gin          *gin.Engine
+	cacheManager *CacheManager
 }
 
 type ServerImpl interface {
@@ -46,6 +48,7 @@ type ServerImpl interface {
 func New(
 	bindAddr string,
 	serverImpl ServerImpl,
+	asyncRegistry *async.Async,
 	log *slog.Logger,
 	cacheDuration time.Duration,
 	ignoredUserAgents []string,
@@ -68,6 +71,7 @@ func New(
 	r.Use(sloggin.NewWithConfig(log, lmConfig))
 	r.Use(gin.Recovery())
 	store := persist.NewMemoryStore(cacheDuration)
+	cacheManager := NewCacheManager(store, asyncRegistry, log)
 	r.Use(injectLoggerMiddleware(log))
 	r.NoRoute(serverImpl.NoRouteHandler)
 	r.Use(serverImpl.NotFoundHandler)
@@ -88,6 +92,7 @@ func New(
 	apiRoutes := r.Group("/api")
 	{
 		apiRoutes.GET("/search", serverImpl.SearchHandler)
+		apiRoutes.POST("/cache/invalidate", cacheInvalidateHandler(cacheManager))
 	}
 	
 	htmlRoutes := r.Group("/")
@@ -105,8 +110,9 @@ func New(
 	}
 
 	return &Server{
-		gin:    r,
-		server: srv,
+		gin:          r,
+		server:       srv,
+		cacheManager: cacheManager,
 	}, nil
 }
 
@@ -165,5 +171,16 @@ func robotsTxtHandler(ctx *gin.Context) {
 func serviceInfoHandler(si *serviceinfo.ServiceInfo) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, si)
+	}
+}
+
+func cacheInvalidateHandler(cacheManager *CacheManager) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		err := cacheManager.ClearAll()
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to invalidate cache"})
+			return
+		}
+		ctx.JSON(http.StatusOK, gin.H{"message": "Cache invalidated successfully"})
 	}
 }
