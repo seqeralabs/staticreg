@@ -67,7 +67,7 @@ var serveCmd = &cobra.Command{
 		filler := filler.New(asyncClient, rootCfg.RegistryHostname, "/")
 
 		regServer := staticreg.New(asyncClient, filler, rootCfg.RegistryHostname)
-		srv, err := server.New(bindAddr, regServer, log, cacheDuration, ignoredUserAgents)
+		srv, err := server.New(bindAddr, regServer, asyncClient, log, cacheDuration, ignoredUserAgents)
 		if err != nil {
 			slog.Error("error creating server", logger.ErrAttr(err))
 			return
