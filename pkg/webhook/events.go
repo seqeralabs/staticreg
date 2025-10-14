@@ -68,9 +68,22 @@ func (e *DistributionEvent) IsPushEvent() bool {
 	return e.Action == "push"
 }
 
+// IsPullEvent checks if the event is a pull action
+func (e *DistributionEvent) IsPullEvent() bool {
+	return e.Action == "pull"
+}
+
 // IsManifestPush checks if the event is a manifest push (final step of container push)
 func (e *DistributionEvent) IsManifestPush() bool {
 	return e.IsPushEvent() && (e.Target.MediaType == "application/vnd.docker.distribution.manifest.v2+json" ||
+		e.Target.MediaType == "application/vnd.docker.distribution.manifest.list.v2+json" ||
+		e.Target.MediaType == "application/vnd.oci.image.manifest.v1+json" ||
+		e.Target.MediaType == "application/vnd.oci.image.index.v1+json")
+}
+
+// IsManifestPull checks if the event is a manifest pull (final step of container pull)
+func (e *DistributionEvent) IsManifestPull() bool {
+	return e.IsPullEvent() && e.Target.Tag != "" && (e.Target.MediaType == "application/vnd.docker.distribution.manifest.v2+json" ||
 		e.Target.MediaType == "application/vnd.docker.distribution.manifest.list.v2+json" ||
 		e.Target.MediaType == "application/vnd.oci.image.manifest.v1+json" ||
 		e.Target.MediaType == "application/vnd.oci.image.index.v1+json")

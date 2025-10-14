@@ -197,7 +197,8 @@ func registryWebhookHandler(whService WebhookService, log *slog.Logger) gin.Hand
 		eventsProcessed := 0
 
 		for _, event := range envelope.Events {
-			// 1. Handle PUSH events for CACHE INVALIDATION
+
+			// 1. Handle PUSH events
 			if event.IsManifestPush() {
 				repository := event.Target.Repository
 
@@ -225,28 +226,8 @@ func registryWebhookHandler(whService WebhookService, log *slog.Logger) gin.Hand
 				continue
 			}
 
-			// 2. Handle PULL events for DATABASE STORAGE
-			if event.Action == "pull" {
-
-				isManifestPull := event.Target.MediaType == "application/vnd.docker.distribution.manifest.v2+json" ||
-					event.Target.MediaType == "application/vnd.docker.distribution.manifest.list.v2+json" ||
-					event.Target.MediaType == "application/vnd.oci.image.manifest.v1+json" ||
-					event.Target.MediaType == "application/vnd.oci.image.index.v1+json"
-
-				// Only proceed if it is a manifest pull AND the actor name is present (indicating a user/authenticated action)
-				if !isManifestPull || event.Target.Tag == "" {
-					log.Debug("Skipping system pull event (manifest check/no actor)",
-						"repository", event.Target.Repository,
-						"actor", event.Actor.Name,
-						"mediaType", event.Target.MediaType)
-					eventsProcessed++
-					continue
-				}
-
-				log.Info("Processing pull event for database saving",
-					"repository", event.Target.Repository,
-					"tag", event.Target.Tag)
-
+			// 2. Handle PULL events
+			if event.IsManifestPull() {
 				if err := whService.SavePullEvent(ctx, &event); err != nil {
 					log.Error("Failed to save pull event to database",
 						"repository", event.Target.Repository,
