@@ -29,10 +29,16 @@ var (
 	robotsTxtETag = fmt.Sprintf("\"%x\"", sha256.Sum256([]byte(robotsTxt)))
 )
 
+type WebhookService interface {
+	InvalidateRepository(repository string) error
+	SavePullEvent(ctx context.Context, event *webhook.DistributionEvent) error
+}
+
 type Server struct {
-	server       *http.Server
-	gin          *gin.Engine
-	cacheManager *CacheManager
+	server         *http.Server
+	gin            *gin.Engine
+	cacheManager   *CacheManager
+	webhookService WebhookService
 }
 
 type ServerImpl interface {
@@ -73,6 +79,8 @@ func New(
 	r.Use(gin.Recovery())
 	store := persist.NewMemoryStore(cacheDuration)
 	cacheManager := NewCacheManager(store, asyncRegistry, log)
+	whService := webhook.NewServiceAdapter(cacheManager, log)
+
 	r.Use(injectLoggerMiddleware(log))
 	r.NoRoute(serverImpl.NoRouteHandler)
 	r.Use(serverImpl.NotFoundHandler)
@@ -89,13 +97,13 @@ func New(
 	r.Use(ignoredUAMiddleware)
 	r.GET("/robots.txt", robotsTxtHandler)
 	r.GET("/service-info", serviceInfoHandler(si))
-	
+
 	apiRoutes := r.Group("/api")
 	{
 		apiRoutes.GET("/search", serverImpl.SearchHandler)
-		apiRoutes.POST("/webhook/registry", registryWebhookHandler(cacheManager, log))
+		apiRoutes.POST("/webhook/registry", registryWebhookHandler(whService, log))
 	}
-	
+
 	htmlRoutes := r.Group("/")
 	{
 		r.GET("/", cache.CacheByRequestURI(store, cacheDuration), serverImpl.RepositoriesListHandler)
@@ -111,9 +119,10 @@ func New(
 	}
 
 	return &Server{
-		gin:          r,
-		server:       srv,
-		cacheManager: cacheManager,
+		gin:            r,
+		server:         srv,
+		cacheManager:   cacheManager,
+		webhookService: whService,
 	}, nil
 }
 
@@ -175,7 +184,7 @@ func serviceInfoHandler(si *serviceinfo.ServiceInfo) gin.HandlerFunc {
 	}
 }
 
-func registryWebhookHandler(cacheManager *CacheManager, log *slog.Logger) gin.HandlerFunc {
+func registryWebhookHandler(whService WebhookService, log *slog.Logger) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var envelope webhook.DistributionEventEnvelope
 		if err := ctx.ShouldBindJSON(&envelope); err != nil {
@@ -188,50 +197,80 @@ func registryWebhookHandler(cacheManager *CacheManager, log *slog.Logger) gin.Ha
 		eventsProcessed := 0
 
 		for _, event := range envelope.Events {
-			// Only process push events for manifests (final step of container push)
-			if !event.IsManifestPush() {
-				log.Debug("Skipping non-manifest push event", 
-					"action", event.Action, 
-					"mediaType", event.Target.MediaType,
-					"repository", event.Target.Repository)
+			// 1. Handle PUSH events for CACHE INVALIDATION
+			if event.IsManifestPush() {
+				repository := event.Target.Repository
+
+				// Avoid duplicate processing for the same repository in this batch
+				if processedRepos[repository] {
+					log.Debug("Repository already processed in this batch", "repository", repository)
+					eventsProcessed++
+					continue
+				}
+
+				log.Info("Processing push event for cache invalidation",
+					"repository", repository,
+					"digest", event.Target.Digest,
+					"tag", event.Target.Tag)
+
+				err := whService.InvalidateRepository(repository)
+				if err != nil {
+					log.Error("Failed to invalidate repository cache",
+						"repository", repository,
+						"error", err)
+				} else {
+					processedRepos[repository] = true
+				}
+				eventsProcessed++
 				continue
 			}
 
-			repository := event.Target.Repository
-			
-			// Avoid duplicate processing for the same repository in this batch
-			if processedRepos[repository] {
-				log.Debug("Repository already processed in this batch", "repository", repository)
+			// 2. Handle PULL events for DATABASE STORAGE
+			if event.Action == "pull" {
+
+				isManifestPull := event.Target.MediaType == "application/vnd.docker.distribution.manifest.v2+json" ||
+					event.Target.MediaType == "application/vnd.docker.distribution.manifest.list.v2+json" ||
+					event.Target.MediaType == "application/vnd.oci.image.manifest.v1+json" ||
+					event.Target.MediaType == "application/vnd.oci.image.index.v1+json"
+
+				// Only proceed if it is a manifest pull AND the actor name is present (indicating a user/authenticated action)
+				if !isManifestPull || event.Target.Tag == "" {
+					log.Debug("Skipping system pull event (manifest check/no actor)",
+						"repository", event.Target.Repository,
+						"actor", event.Actor.Name,
+						"mediaType", event.Target.MediaType)
+					eventsProcessed++
+					continue
+				}
+
+				log.Info("Processing pull event for database saving",
+					"repository", event.Target.Repository,
+					"tag", event.Target.Tag)
+
+				if err := whService.SavePullEvent(ctx, &event); err != nil {
+					log.Error("Failed to save pull event to database",
+						"repository", event.Target.Repository,
+						"error", err)
+				}
+				eventsProcessed++
 				continue
 			}
 
-			log.Info("Processing push event for repository", 
-				"repository", repository, 
-				"digest", event.Target.Digest,
-				"tag", event.Target.Tag)
-
-			// Invalidate cache for this specific repository
-			err := cacheManager.InvalidateRepository(repository)
-			if err != nil {
-				log.Error("Failed to invalidate repository cache", 
-					"repository", repository, 
-					"error", err)
-				// Continue processing other repositories even if one fails
-				continue
-			}
-
-			processedRepos[repository] = true
+			log.Debug("Skipping unhandled event action",
+				"action", event.Action,
+				"mediaType", event.Target.MediaType,
+				"repository", event.Target.Repository)
 			eventsProcessed++
 		}
 
-		log.Info("Webhook processing completed", 
+		log.Info("Webhook processing completed",
 			"totalEvents", len(envelope.Events),
 			"eventsProcessed", eventsProcessed,
 			"repositoriesInvalidated", len(processedRepos))
 
 		ctx.JSON(http.StatusOK, gin.H{
-			"message": "Webhook processed successfully",
-			"eventsProcessed": eventsProcessed,
+			"message":                 "Webhook processed successfully",
+			"eventsProcessed":         eventsProcessed,
 			"repositoriesInvalidated": len(processedRepos),
 		})
 	}

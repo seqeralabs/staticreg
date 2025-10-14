@@ -19,14 +19,14 @@ func InitPool() {
 	connStr := os.Getenv("DATABASE_URL")
 	if connStr == "" {
 		// Log warning and return if the environment variable is not set
-		log.Println("⚠️ WARNING: DATABASE_URL environment variable is not set. Database functions will be disabled.")
-		Pool = nil // Explicitly set to nil
+		log.Println("WARNING: DATABASE_URL environment variable is not set. Database functions will be disabled.")
+		Pool = nil
 		return
 	}
 
 	config, err := pgxpool.ParseConfig(connStr)
 	if err != nil {
-		log.Printf("⚠️ WARNING: Unable to parse DATABASE_URL configuration: %v. Database functions will be disabled.", err)
+		log.Printf("WARNING: Unable to parse DATABASE_URL configuration: %v. Database functions will be disabled.", err)
 		Pool = nil
 		return
 	}
@@ -40,14 +40,14 @@ func InitPool() {
 	// Attempt to create the connection pool
 	pool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
-		log.Printf("⚠️ WARNING: Unable to create connection pool: %v. Database functions will be disabled.", err)
+		log.Printf("WARNING: Unable to create connection pool: %v. Database functions will be disabled.", err)
 		Pool = nil
 		return
 	}
 
 	// Attempt to ping the database
 	if err = pool.Ping(ctx); err != nil {
-		log.Printf("⚠️ WARNING: Database connection failed to ping: %v. Database functions will be disabled.", err)
+		log.Printf("WARNING: Database connection failed to ping: %v. Database functions will be disabled.", err)
 		// Close the temporary pool if ping failed, before setting the global Pool to nil
 		pool.Close()
 		Pool = nil
@@ -56,7 +56,7 @@ func InitPool() {
 
 	// Success
 	Pool = pool
-	log.Println("✅ PostgreSQL connection pool successfully initialized.")
+	log.Println("PostgreSQL connection pool successfully initialized.")
 }
 
 // ClosePool closes the database connection pool if it was initialized.
