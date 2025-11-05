@@ -47,7 +47,7 @@ The tool includes built-in rate limiting to prevent overwhelming the target regi
 - Image tags list page with detailed information
 - Static website served over HTTP
 - Image security scan results (via Wave integration)
-- Image manifest inspection
+- Image manifest inspection (via Wave integration)
 - Automatic caching and periodic refresh
 - Rate-limited registry requests
 - Support for authenticated registries
