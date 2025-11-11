@@ -81,9 +81,9 @@ To test the webhook integration locally:
    docker pull localhost:5000/alpine:latest
    ```
 
-4. Verify events are stored in the database:
+4. Verify metrics are stored in the database:
    ```bash
-   psql $DATABASE_URL -c "SELECT event_time, repo_name, tag FROM docker_pull_events ORDER BY event_time DESC LIMIT 5;"
+   psql $DATABASE_URL -c "SELECT pull_date, repo_name, tag, architecture, pull_count FROM container_pull_metrics ORDER BY pull_date DESC LIMIT 5;"
    ```
 
 ## Release
