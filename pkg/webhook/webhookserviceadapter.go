@@ -2,7 +2,6 @@ package webhook
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/seqeralabs/staticreg/pkg/db"
 	"log/slog"
@@ -36,29 +35,41 @@ func (a *ServiceAdapter) SavePullEvent(ctx context.Context, event *DistributionE
 
 	repoName := event.Target.Repository
 	tag := event.Target.Tag
-	actorName := event.Actor.Name
-	eventTime := event.Timestamp
+	architecture := event.GetArchitecture()
+	pullDate := event.Timestamp.Format("2006-01-02") // Format as DATE (YYYY-MM-DD)
 
-	jsonPayload, err := json.Marshal(event)
-	if err != nil {
-		return fmt.Errorf("could not marshal event for JSONB storage: %w", err)
-	}
+	a.Logger.Debug("Processing pull event",
+		"repository", repoName,
+		"tag", tag,
+		"architecture", architecture,
+		"date", pullDate)
 
+	// Use UPSERT (INSERT ... ON CONFLICT) to increment pull count
+	// If the combination of (pull_date, repo_name, tag, architecture) exists, increment pull_count
+	// Otherwise, insert a new record with pull_count = 1
 	query := `
-        INSERT INTO docker_pull_events (event_time, repo_name, tag, actor_name, event_payload)
-        VALUES ($1, $2, $3, $4, $5)`
+        INSERT INTO container_pull_metrics (pull_date, repo_name, tag, architecture, pull_count, updated_at)
+        VALUES ($1, $2, $3, $4, 1, NOW())
+        ON CONFLICT (pull_date, repo_name, tag, architecture)
+        DO UPDATE SET
+            pull_count = container_pull_metrics.pull_count + 1,
+            updated_at = NOW()`
 
-	_, err = db.Pool.Exec(ctx, query,
-		eventTime,
+	_, err := db.Pool.Exec(ctx, query,
+		pullDate,
 		repoName,
 		tag,
-		actorName,
-		jsonPayload,
+		architecture,
 	)
 
 	if err != nil {
-		return fmt.Errorf("failed to execute insert query for pull event: %w", err)
+		return fmt.Errorf("failed to execute upsert query for pull metrics: %w", err)
 	}
+
+	a.Logger.Info("Pull metrics updated",
+		"repository", repoName,
+		"tag", tag,
+		"architecture", architecture)
 
 	return nil
 }

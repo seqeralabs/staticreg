@@ -14,7 +14,10 @@
 // limitations under the License.
 package webhook
 
-import "time"
+import (
+	"strings"
+	"time"
+)
 
 // DistributionEventEnvelope represents the envelope containing Docker Distribution events
 type DistributionEventEnvelope struct {
@@ -87,4 +90,30 @@ func (e *DistributionEvent) IsManifestPull() bool {
 		e.Target.MediaType == "application/vnd.docker.distribution.manifest.list.v2+json" ||
 		e.Target.MediaType == "application/vnd.oci.image.manifest.v1+json" ||
 		e.Target.MediaType == "application/vnd.oci.image.index.v1+json")
+}
+
+// GetArchitecture extracts architecture from the event's user agent string
+// Docker clients typically include platform info in the user agent
+// Format examples:
+//   - "docker/20.10.7 go/go1.16.4 git-commit/f0df350 kernel/5.10.0 os/linux arch/amd64"
+//   - "containerd/1.4.4+unknown"
+func (e *DistributionEvent) GetArchitecture() string {
+	userAgent := e.Request.UserAgent
+	if userAgent == "" {
+		return "unknown"
+	}
+
+	// Try to extract architecture from user agent
+	// Look for "arch/xxx" pattern
+	parts := strings.Split(userAgent, " ")
+	for _, part := range parts {
+		if strings.HasPrefix(part, "arch/") {
+			arch := strings.TrimPrefix(part, "arch/")
+			return arch
+		}
+	}
+
+	// If no arch found, try to infer from other patterns
+	// containerd and other clients may not include arch
+	return "unknown"
 }
