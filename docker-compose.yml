@@ -1,0 +1,47 @@
+# docker-compose.yml
+#
+# This Docker Compose file is designed for local executions and end-to-end (E2E) testing.
+# It provides the necessary services to run the application locally and execute the tests
+# located in the `tests` folder. The services include:
+#
+# 1. **Postgres**: A PostgreSQL database used as the primary datastore for the application.
+#    - Accessible on port 5432.
+#    - Preconfigured with a database, user, and password for local use.
+#
+# 2. **OCI Registry**: A local OCI (Open Container Initiative) registry for managing plugins.
+#    - Accessible on port 5000.
+#    - Stores plugin artifacts locally in the `.oci` directory.
+#
+# Usage:
+# - **Local Development**: Run `docker-compose up` to start all services locally.
+# - **E2E Tests**: Ensure this file is used to spin up the required services before running tests in the `tests` folder.
+#
+# Notes:
+# - The `volumes` section ensures data persistence for the OCI registry.
+# - Environment variables are used to configure services for local execution.
+services:
+  postgres:
+    image: postgres:15.2
+    container_name: postgres-container
+    environment:
+      POSTGRES_DB: staticreg
+      POSTGRES_USER: staticreg
+      POSTGRES_PASSWORD: password
+    expose:
+      - "5432"
+    ports:
+      - "5432:5432"
+
+  oci-registry:
+    image: registry:3
+    container_name: oci-registry
+    expose:
+      - "5000"
+    ports:
+      - "5000:5000"
+    volumes:
+      - .oci:/var/lib/registry
+      - ./registry.yml:/etc/distribution/config.yml:ro
+    environment:
+      OTEL_TRACES_EXPORTER: "none"
+      REGISTRY_LOG_LEVEL: "info"
