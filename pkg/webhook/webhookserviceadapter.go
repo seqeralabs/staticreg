@@ -7,24 +7,14 @@ import (
 	"log/slog"
 )
 
-type CacheInvalidator interface {
-	InvalidateRepository(repository string) error
-}
-
 type ServiceAdapter struct {
-	CacheManager CacheInvalidator
-	Logger       *slog.Logger
+	Logger *slog.Logger
 }
 
-func NewServiceAdapter(cm CacheInvalidator, log *slog.Logger) *ServiceAdapter {
+func NewServiceAdapter(log *slog.Logger) *ServiceAdapter {
 	return &ServiceAdapter{
-		CacheManager: cm,
-		Logger:       log,
+		Logger: log,
 	}
-}
-
-func (a *ServiceAdapter) InvalidateRepository(repository string) error {
-	return a.CacheManager.InvalidateRepository(repository)
 }
 
 func (a *ServiceAdapter) SavePullEvent(ctx context.Context, event *DistributionEvent) error {

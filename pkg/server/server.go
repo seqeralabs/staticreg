@@ -30,14 +30,12 @@ var (
 )
 
 type WebhookService interface {
-	InvalidateRepository(repository string) error
 	SavePullEvent(ctx context.Context, event *webhook.DistributionEvent) error
 }
 
 type Server struct {
 	server         *http.Server
 	gin            *gin.Engine
-	cacheManager   *CacheManager
 	webhookService WebhookService
 }
 
@@ -78,8 +76,7 @@ func New(
 	r.Use(sloggin.NewWithConfig(log, lmConfig))
 	r.Use(gin.Recovery())
 	store := persist.NewMemoryStore(cacheDuration)
-	cacheManager := NewCacheManager(store, asyncRegistry, log)
-	whService := webhook.NewServiceAdapter(cacheManager, log)
+	whService := webhook.NewServiceAdapter(log)
 
 	r.Use(injectLoggerMiddleware(log))
 	r.NoRoute(serverImpl.NoRouteHandler)
@@ -121,7 +118,6 @@ func New(
 	return &Server{
 		gin:            r,
 		server:         srv,
-		cacheManager:   cacheManager,
 		webhookService: whService,
 	}, nil
 }
@@ -193,40 +189,10 @@ func registryWebhookHandler(whService WebhookService, log *slog.Logger) gin.Hand
 			return
 		}
 
-		processedRepos := make(map[string]bool)
 		eventsProcessed := 0
 
 		for _, event := range envelope.Events {
-
-			// 1. Handle PUSH events
-			if event.IsManifestPush() {
-				repository := event.Target.Repository
-
-				// Avoid duplicate processing for the same repository in this batch
-				if processedRepos[repository] {
-					log.Debug("Repository already processed in this batch", "repository", repository)
-					eventsProcessed++
-					continue
-				}
-
-				log.Info("Processing push event for cache invalidation",
-					"repository", repository,
-					"digest", event.Target.Digest,
-					"tag", event.Target.Tag)
-
-				err := whService.InvalidateRepository(repository)
-				if err != nil {
-					log.Error("Failed to invalidate repository cache",
-						"repository", repository,
-						"error", err)
-				} else {
-					processedRepos[repository] = true
-				}
-				eventsProcessed++
-				continue
-			}
-
-			// 2. Handle PULL events
+			// Handle PULL events
 			if event.IsManifestPull() {
 				if err := whService.SavePullEvent(ctx, &event); err != nil {
 					log.Error("Failed to save pull event to database",
@@ -246,13 +212,11 @@ func registryWebhookHandler(whService WebhookService, log *slog.Logger) gin.Hand
 
 		log.Info("Webhook processing completed",
 			"totalEvents", len(envelope.Events),
-			"eventsProcessed", eventsProcessed,
-			"repositoriesInvalidated", len(processedRepos))
+			"eventsProcessed", eventsProcessed)
 
 		ctx.JSON(http.StatusOK, gin.H{
-			"message":                 "Webhook processed successfully",
-			"eventsProcessed":         eventsProcessed,
-			"repositoriesInvalidated": len(processedRepos),
+			"message":         "Webhook processed successfully",
+			"eventsProcessed": eventsProcessed,
 		})
 	}
 }
