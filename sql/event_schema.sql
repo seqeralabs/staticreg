@@ -7,11 +7,12 @@ CREATE TABLE IF NOT EXISTS container_pull_metrics (
     pull_date DATE NOT NULL,
     repo_name TEXT NOT NULL,
     tag TEXT NOT NULL,
+    digest TEXT NOT NULL,
     architecture TEXT NOT NULL,
     pull_count INTEGER NOT NULL DEFAULT 1,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    UNIQUE(pull_date, repo_name, tag, architecture)
+    UNIQUE(pull_date, repo_name, tag, digest, architecture)
 );
 
 -- Indexes for efficient queries

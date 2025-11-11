@@ -25,22 +25,24 @@ func (a *ServiceAdapter) SavePullEvent(ctx context.Context, event *DistributionE
 
 	repoName := event.Target.Repository
 	tag := event.Target.Tag
+	digest := event.Target.Digest
 	architecture := event.GetArchitecture()
 	pullDate := event.Timestamp.Format("2006-01-02") // Format as DATE (YYYY-MM-DD)
 
 	a.Logger.Debug("Processing pull event",
 		"repository", repoName,
 		"tag", tag,
+		"digest", digest,
 		"architecture", architecture,
 		"date", pullDate)
 
 	// Use UPSERT (INSERT ... ON CONFLICT) to increment pull count
-	// If the combination of (pull_date, repo_name, tag, architecture) exists, increment pull_count
+	// If the combination of (pull_date, repo_name, tag, digest, architecture) exists, increment pull_count
 	// Otherwise, insert a new record with pull_count = 1
 	query := `
-        INSERT INTO container_pull_metrics (pull_date, repo_name, tag, architecture, pull_count, updated_at)
-        VALUES ($1, $2, $3, $4, 1, NOW())
-        ON CONFLICT (pull_date, repo_name, tag, architecture)
+        INSERT INTO container_pull_metrics (pull_date, repo_name, tag, digest, architecture, pull_count, updated_at)
+        VALUES ($1, $2, $3, $4, $5, 1, NOW())
+        ON CONFLICT (pull_date, repo_name, tag, digest, architecture)
         DO UPDATE SET
             pull_count = container_pull_metrics.pull_count + 1,
             updated_at = NOW()`
@@ -49,6 +51,7 @@ func (a *ServiceAdapter) SavePullEvent(ctx context.Context, event *DistributionE
 		pullDate,
 		repoName,
 		tag,
+		digest,
 		architecture,
 	)
 
@@ -59,6 +62,7 @@ func (a *ServiceAdapter) SavePullEvent(ctx context.Context, event *DistributionE
 	a.Logger.Info("Pull metrics updated",
 		"repository", repoName,
 		"tag", tag,
+		"digest", digest,
 		"architecture", architecture)
 
 	return nil

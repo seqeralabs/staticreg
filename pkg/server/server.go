@@ -190,8 +190,19 @@ func registryWebhookHandler(whService WebhookService, log *slog.Logger) gin.Hand
 		}
 
 		eventsProcessed := 0
+		eventsSkipped := 0
 
 		for _, event := range envelope.Events {
+			// Skip events from staticreg itself to avoid counting internal manifest fetches
+			if event.IsFromStaticReg() {
+				log.Debug("Skipping event from staticreg itself",
+					"repository", event.Target.Repository,
+					"tag", event.Target.Tag,
+					"userAgent", event.Request.UserAgent)
+				eventsSkipped++
+				continue
+			}
+
 			// Handle PULL events
 			if event.IsManifestPull() {
 				if err := whService.SavePullEvent(ctx, &event); err != nil {
@@ -207,16 +218,17 @@ func registryWebhookHandler(whService WebhookService, log *slog.Logger) gin.Hand
 				"action", event.Action,
 				"mediaType", event.Target.MediaType,
 				"repository", event.Target.Repository)
-			eventsProcessed++
 		}
 
 		log.Info("Webhook processing completed",
 			"totalEvents", len(envelope.Events),
-			"eventsProcessed", eventsProcessed)
+			"eventsProcessed", eventsProcessed,
+			"eventsSkipped", eventsSkipped)
 
 		ctx.JSON(http.StatusOK, gin.H{
 			"message":         "Webhook processed successfully",
 			"eventsProcessed": eventsProcessed,
+			"eventsSkipped":   eventsSkipped,
 		})
 	}
 }

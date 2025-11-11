@@ -92,6 +92,12 @@ func (e *DistributionEvent) IsManifestPull() bool {
 		e.Target.MediaType == "application/vnd.oci.image.index.v1+json")
 }
 
+// IsFromStaticReg checks if the event originates from staticreg itself
+// This helps exclude staticreg's internal manifest fetches from pull metrics
+func (e *DistributionEvent) IsFromStaticReg() bool {
+	return strings.Contains(e.Request.UserAgent, "seqera/staticreg")
+}
+
 // GetArchitecture extracts architecture from the event's user agent string
 // Docker clients typically include platform info in the user agent
 // Format examples:
