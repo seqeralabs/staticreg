@@ -57,6 +57,48 @@ func InitPool() {
 	// Success
 	Pool = pool
 	log.Println("PostgreSQL connection pool successfully initialized.")
+
+	// Initialize database schema
+	if err := InitSchema(ctx); err != nil {
+		log.Printf("WARNING: Failed to initialize database schema: %v. Some features may not work.", err)
+	}
+}
+
+// InitSchema creates the database schema if it doesn't exist
+func InitSchema(ctx context.Context) error {
+	if Pool == nil {
+		return nil
+	}
+
+	// SQL schema for container pull metrics
+	schema := `
+-- Create container pull metrics table if not exists
+CREATE TABLE IF NOT EXISTS container_pull_metrics (
+    id BIGSERIAL PRIMARY KEY,
+    pull_date DATE NOT NULL,
+    repo_name TEXT NOT NULL,
+    tag TEXT NOT NULL,
+    digest TEXT NOT NULL,
+    architecture TEXT NOT NULL,
+    pull_count INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    UNIQUE(pull_date, repo_name, tag, digest, architecture)
+);
+
+-- Create indexes for efficient queries
+CREATE INDEX IF NOT EXISTS idx_pull_date ON container_pull_metrics (pull_date DESC);
+CREATE INDEX IF NOT EXISTS idx_repo_date ON container_pull_metrics (repo_name, pull_date DESC);
+CREATE INDEX IF NOT EXISTS idx_repo_arch_date ON container_pull_metrics (repo_name, architecture, pull_date DESC);
+`
+
+	_, err := Pool.Exec(ctx, schema)
+	if err != nil {
+		return err
+	}
+
+	log.Println("Database schema initialized successfully.")
+	return nil
 }
 
 // ClosePool closes the database connection pool if it was initialized.
