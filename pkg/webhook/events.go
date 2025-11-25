@@ -106,7 +106,7 @@ func (e *DistributionEvent) IsFromStaticReg() bool {
 func (e *DistributionEvent) GetArchitecture() string {
 	userAgent := e.Request.UserAgent
 	if userAgent == "" {
-		return "unknown"
+		return "not-specified"
 	}
 
 	// Try to extract architecture from user agent
@@ -119,7 +119,8 @@ func (e *DistributionEvent) GetArchitecture() string {
 		}
 	}
 
-	// If no arch found, try to infer from other patterns
-	// containerd and other clients may not include arch
-	return "unknown"
+	// If no arch found, return a more meaningful default
+	// "not-specified" is clearer than "unknown" - it indicates the client didn't provide architecture info
+	// This helps distinguish from actual "unknown" architectures vs missing information
+	return "not-specified"
 }

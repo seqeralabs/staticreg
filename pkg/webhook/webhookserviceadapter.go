@@ -27,7 +27,7 @@ func (a *ServiceAdapter) SavePullEvent(ctx context.Context, event *DistributionE
 	tag := event.Target.Tag
 	digest := event.Target.Digest
 	architecture := event.GetArchitecture()
-	pullDate := event.Timestamp.Format("2006-01-02") // Format as DATE (YYYY-MM-DD)
+	pullDate := event.Timestamp.UTC().Format("2006-01-02") // Format as DATE (YYYY-MM-DD) in UTC
 
 	a.Logger.Debug("Processing pull event",
 		"repository", repoName,

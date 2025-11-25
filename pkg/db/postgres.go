@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -95,6 +96,40 @@ CREATE INDEX IF NOT EXISTS idx_repo_arch_date ON container_pull_metrics (repo_na
 	_, err := Pool.Exec(ctx, schema)
 	if err != nil {
 		return err
+	}
+
+	// Validate that the table was created successfully
+	var tableExists bool
+	err = Pool.QueryRow(ctx, `
+		SELECT EXISTS (
+			SELECT FROM information_schema.tables
+			WHERE table_schema = 'public'
+			AND table_name = 'container_pull_metrics'
+		)`).Scan(&tableExists)
+	if err != nil {
+		return fmt.Errorf("failed to verify table creation: %w", err)
+	}
+	if !tableExists {
+		return fmt.Errorf("table container_pull_metrics was not created")
+	}
+
+	// Validate that indexes were created successfully
+	expectedIndexes := []string{"idx_pull_date", "idx_repo_date", "idx_repo_arch_date"}
+	for _, indexName := range expectedIndexes {
+		var indexExists bool
+		err = Pool.QueryRow(ctx, `
+			SELECT EXISTS (
+				SELECT FROM pg_indexes
+				WHERE schemaname = 'public'
+				AND tablename = 'container_pull_metrics'
+				AND indexname = $1
+			)`, indexName).Scan(&indexExists)
+		if err != nil {
+			return fmt.Errorf("failed to verify index %s: %w", indexName, err)
+		}
+		if !indexExists {
+			return fmt.Errorf("index %s was not created", indexName)
+		}
 	}
 
 	log.Println("Database schema initialized successfully.")

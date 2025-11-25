@@ -198,6 +198,7 @@ func registryWebhookHandler(whService WebhookService, log *slog.Logger) gin.Hand
 				log.Debug("Skipping event from staticreg itself",
 					"repository", event.Target.Repository,
 					"tag", event.Target.Tag,
+					"action", event.Action,
 					"userAgent", event.Request.UserAgent)
 				eventsSkipped++
 				continue
