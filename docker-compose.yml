@@ -21,7 +21,7 @@
 # - Environment variables are used to configure services for local execution.
 services:
   postgres:
-    image: postgres:15.2
+    image: postgres:18.1
     container_name: postgres-container
     environment:
       POSTGRES_DB: staticreg
