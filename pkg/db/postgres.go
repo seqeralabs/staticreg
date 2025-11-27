@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	schemasql "github.com/seqeralabs/staticreg/pkg/sql"
 )
 
 // Pool is the global, exported database connection pool instance.
@@ -72,27 +74,19 @@ func InitSchema(ctx context.Context) error {
 		return nil
 	}
 
-	// SQL schema for container pull metrics
-	schema := `
--- Create container pull metrics table if not exists
-CREATE TABLE IF NOT EXISTS container_pull_metrics (
-    id BIGSERIAL PRIMARY KEY,
-    pull_date DATE NOT NULL,
-    repo_name TEXT NOT NULL,
-    tag TEXT NOT NULL,
-    digest TEXT NOT NULL,
-    architecture TEXT NOT NULL,
-    pull_count INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    UNIQUE(pull_date, repo_name, tag, digest, architecture)
-);
-
--- Create indexes for efficient queries
-CREATE INDEX IF NOT EXISTS idx_pull_date ON container_pull_metrics (pull_date DESC);
-CREATE INDEX IF NOT EXISTS idx_repo_date ON container_pull_metrics (repo_name, pull_date DESC);
-CREATE INDEX IF NOT EXISTS idx_repo_arch_date ON container_pull_metrics (repo_name, architecture, pull_date DESC);
-`
+	// Load SQL schema from embedded file
+	// Filter out DROP TABLE statements since we don't want to drop existing data during initialization
+	schemaLines := strings.Split(schemasql.EventSchemaSQL, "\n")
+	var filteredLines []string
+	for _, line := range schemaLines {
+		trimmed := strings.TrimSpace(line)
+		// Skip DROP TABLE statements
+		if strings.HasPrefix(strings.ToUpper(trimmed), "DROP TABLE") {
+			continue
+		}
+		filteredLines = append(filteredLines, line)
+	}
+	schema := strings.Join(filteredLines, "\n")
 
 	_, err := Pool.Exec(ctx, schema)
 	if err != nil {
