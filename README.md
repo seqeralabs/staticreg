@@ -167,24 +167,38 @@ kubectl apply -f manifests/deployment.yml
 
 ## Container Registry Metrics
 
-Staticreg can collect and store container pull metrics from Docker Distribution registries via webhook integration. Metrics are aggregated by:
+Staticreg exposes Prometheus-compatible metrics for monitoring container pull activity from Docker Distribution registries via webhook integration.
 
-- **Date** - Daily pull counts
+Metrics are collected by:
+
 - **Repository & Tag** - Which images are being pulled
 - **Architecture** - CPU architecture (amd64, arm64, etc.)
+- **Digest** - Specific image version
 
-This provides efficient storage and fast queries for analyzing container usage patterns.
+### Prometheus Metrics
 
-### Database Setup
+Staticreg exposes Prometheus-compatible metrics at the `/metrics` endpoint. Available metrics:
 
-Metrics are stored in PostgreSQL. To enable metrics collection:
+- `staticreg_container_pulls_total{repository, tag, digest, architecture}` - Detailed pull metrics
+- `staticreg_container_pulls_by_repo_total{repository}` - Pulls aggregated by repository
+- `staticreg_container_pulls_by_arch_total{architecture}` - Pulls aggregated by architecture
 
-1. Set up a PostgreSQL database
-2. Apply the schema from `sql/event_schema.sql`
-3. Configure the database connection:
-   ```bash
-   export DATABASE_URL="postgresql://user:password@localhost:5432/staticreg"
-   ```
+**Access metrics:**
+```bash
+curl http://localhost:8093/metrics
+```
+
+**Prometheus configuration example:**
+```yaml
+scrape_configs:
+  - job_name: 'staticreg'
+    static_configs:
+      - targets: ['staticreg-host:8093']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+```
+
+For local testing, Prometheus is included in `docker-compose.yml` and accessible at http://localhost:9090.
 
 ### Webhook Configuration
 
@@ -200,20 +214,20 @@ notifications:
       backoff: 1s
 ```
 
-### Example Queries
+### Example Prometheus Queries
 
-```sql
--- Total pulls by repository
-SELECT repo_name, SUM(pull_count) as total_pulls
-FROM container_pull_metrics
-GROUP BY repo_name
-ORDER BY total_pulls DESC;
+```promql
+# Total pulls by repository
+sum by (repository) (staticreg_container_pulls_total)
 
--- Pulls by architecture
-SELECT architecture, SUM(pull_count) as total_pulls
-FROM container_pull_metrics
-WHERE pull_date >= CURRENT_DATE - INTERVAL '30 days'
-GROUP BY architecture;
+# Pull rate over last 5 minutes
+rate(staticreg_container_pulls_total[5m])
+
+# Pulls by architecture
+sum by (architecture) (staticreg_container_pulls_by_arch_total)
+
+# Top 5 most pulled images
+topk(5, sum by (repository) (staticreg_container_pulls_total))
 ```
 
 For detailed setup instructions, see [docs/WEBHOOK_INTEGRATION.md](docs/WEBHOOK_INTEGRATION.md).

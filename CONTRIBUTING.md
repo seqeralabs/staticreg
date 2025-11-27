@@ -7,15 +7,15 @@ To contribute you need
 - [GNU Make](https://www.gnu.org/software/make/): we use make to hide the details of running multiple commands to get builds done
 - Optional: [Docker](https://docs.docker.com/desktop/install/linux-install/): to build container images and for running the local development dependencies
 
-Start the local development environment with Docker Compose (includes Registry and PostgreSQL):
+Start the local development environment with Docker Compose (includes Registry and Prometheus):
 
 ```bash
 docker-compose up -d
 ```
 
 This starts:
-- PostgreSQL database on port 5432
 - OCI Registry on port 5000
+- Prometheus monitoring on port 9090
 
 Alternatively, start a standalone registry and push an image to it:
 
@@ -33,16 +33,6 @@ make deps
 make
 ```
 
-Set up the database (if using webhook/metrics features):
-
-```bash
-# Set database connection string
-export DATABASE_URL="postgresql://staticreg:password@localhost:5432/staticreg"
-
-# Apply database schema
-psql $DATABASE_URL -f sql/event_schema.sql
-```
-
 Start staticreg
 
 ```bash
@@ -52,7 +42,7 @@ Start staticreg
 By default, staticreg will:
 - Serve the web UI on http://localhost:8093
 - Connect to the registry at localhost:5000
-- Store webhook events in PostgreSQL (if DATABASE_URL is set)
+- Expose Prometheus metrics at http://localhost:8093/metrics
 
 ## Build (without releasing)
 
@@ -61,29 +51,38 @@ make clean
 make
 ```
 
-## Testing Webhook Integration
+## Testing Prometheus Metrics
 
-To test the webhook integration locally:
+To test Prometheus metrics integration locally:
 
-1. Ensure docker-compose services are running:
+1. Ensure docker-compose services are running (including Prometheus):
    ```bash
    docker-compose up -d
    ```
 
 2. Start staticreg:
    ```bash
-   export DATABASE_URL="postgresql://staticreg:password@localhost:5432/staticreg"
    go run main.go serve
    ```
 
-3. Pull an image from the local registry to trigger webhook events:
+3. Pull an image from the local registry to trigger metrics:
    ```bash
    docker pull localhost:5000/alpine:latest
    ```
 
-4. Verify metrics are stored in the database:
+4. Access Prometheus UI:
+   ```
+   http://localhost:9090
+   ```
+
+5. Query staticreg metrics in Prometheus:
+   - `staticreg_container_pulls_total` - Detailed pull metrics with all labels
+   - `staticreg_container_pulls_by_repo_total` - Pulls aggregated by repository
+   - `staticreg_container_pulls_by_arch_total` - Pulls aggregated by architecture
+
+6. View the raw metrics endpoint:
    ```bash
-   psql $DATABASE_URL -c "SELECT pull_date, repo_name, tag, architecture, pull_count FROM container_pull_metrics ORDER BY pull_date DESC LIMIT 5;"
+   curl http://localhost:8093/metrics
    ```
 
 ## Release
