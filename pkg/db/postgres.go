@@ -62,6 +62,7 @@ func InitPool() {
 	// Initialize database schema
 	if err := InitSchema(ctx); err != nil {
 		slog.Error("Failed to initialize database schema: %v. Exiting application.", err)
+		os.Exit(1)
 	}
 }
 
