@@ -3,8 +3,9 @@ package webhook
 import (
 	"context"
 	"fmt"
-	"github.com/seqeralabs/staticreg/pkg/db"
 	"log/slog"
+
+	"github.com/seqeralabs/staticreg/pkg/db"
 )
 
 type ServiceAdapter struct {
@@ -58,12 +59,6 @@ func (a *ServiceAdapter) SavePullEvent(ctx context.Context, event *DistributionE
 	if err != nil {
 		return fmt.Errorf("failed to execute upsert query for pull metrics: %w", err)
 	}
-
-	a.Logger.Info("Pull metrics updated",
-		"repository", repoName,
-		"tag", tag,
-		"digest", digest,
-		"architecture", architecture)
 
 	return nil
 }
