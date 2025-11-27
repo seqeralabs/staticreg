@@ -30,13 +30,6 @@ func (a *ServiceAdapter) SavePullEvent(ctx context.Context, event *DistributionE
 	architecture := event.GetArchitecture()
 	pullDate := event.Timestamp.UTC().Format("2006-01-02") // Format as DATE (YYYY-MM-DD) in UTC
 
-	a.Logger.Debug("Processing pull event",
-		"repository", repoName,
-		"tag", tag,
-		"digest", digest,
-		"architecture", architecture,
-		"date", pullDate)
-
 	// Use UPSERT (INSERT ... ON CONFLICT) to increment pull count
 	// If the combination of (pull_date, repo_name, tag, digest, architecture) exists, increment pull_count
 	// Otherwise, insert a new record with pull_count = 1
