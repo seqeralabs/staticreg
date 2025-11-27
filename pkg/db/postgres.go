@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/seqeralabs/staticreg/pkg/observability/logger"
 	schemasql "github.com/seqeralabs/staticreg/pkg/sql"
 )
 
@@ -29,7 +30,7 @@ func InitPool() {
 
 	config, err := pgxpool.ParseConfig(connStr)
 	if err != nil {
-		slog.Warn("Unable to parse DATABASE_URL configuration: %v. Database functions will be disabled.", err)
+		slog.Warn("Unable to parse DATABASE_URL configuration: %v. Database functions will be disabled.", logger.ErrAttr(err))
 		Pool = nil
 		return
 	}
@@ -43,14 +44,14 @@ func InitPool() {
 	// Attempt to create the connection pool
 	pool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
-		slog.Warn("Unable to create connection pool: %v. Database functions will be disabled.", err)
+		slog.Warn("Unable to create connection pool: %v. Database functions will be disabled.", logger.ErrAttr(err))
 		Pool = nil
 		return
 	}
 
 	// Attempt to ping the database
 	if err = pool.Ping(ctx); err != nil {
-		slog.Warn("Database connection failed to ping: %v. Database functions will be disabled.", err)
+		slog.Warn("Database connection failed to ping: %v. Database functions will be disabled.", logger.ErrAttr(err))
 		// Close the temporary pool if ping failed, before setting the global Pool to nil
 		pool.Close()
 		Pool = nil
@@ -63,7 +64,7 @@ func InitPool() {
 
 	// Initialize database schema
 	if err := InitSchema(ctx); err != nil {
-		slog.Error("Failed to initialize database schema: %v. Exiting application.", err)
+		slog.Error("Failed to initialize database schema: %v. Exiting application.", logger.ErrAttr(err))
 		os.Exit(1)
 	}
 }
