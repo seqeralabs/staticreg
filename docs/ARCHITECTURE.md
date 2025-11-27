@@ -214,13 +214,35 @@ notifications:
 - Reduced operational complexity
 - Progressive enhancement approach
 
+### 6. Metrics and Observability (`pkg/metrics`)
+
+Prometheus metrics integration for monitoring container pull activity:
+
+**Metrics Exposed:**
+- `staticreg_container_pulls_total` - Total container pulls with detailed labels (repository, tag, digest, architecture)
+- `staticreg_container_pulls_by_repo_total` - Aggregated pulls by repository
+- `staticreg_container_pulls_by_arch_total` - Aggregated pulls by architecture
+
+**Endpoint:**
+- `/metrics` - Prometheus-compatible metrics endpoint (exposed on main server port)
+
+**Integration:**
+- Metrics are recorded in real-time as webhook events are processed
+- Accessible via standard Prometheus scraping
+- Works alongside PostgreSQL persistence (metrics are exported regardless of database availability)
+
+**Local Testing:**
+- Prometheus included in `docker-compose.yml` for local development
+- Pre-configured to scrape staticreg metrics on port 8093
+- Access Prometheus UI at http://localhost:9090
+
 ## Future Enhancements
 
-- Metrics dashboard UI
+- Metrics dashboard UI (Grafana integration)
 - REST API for querying pull/push statistics
 - Real-time metrics streaming
 - Webhook authentication/verification (signature-based)
 - Multi-registry support
 - Data retention policies (automatic archiving/cleanup)
 - Push event tracking
-- Export to time-series databases (Prometheus, InfluxDB)
+- Additional Prometheus metrics (push events, error rates, latency)
