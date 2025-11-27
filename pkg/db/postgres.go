@@ -3,7 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"time"
 
@@ -20,14 +20,14 @@ func InitPool() {
 	connStr := os.Getenv("DATABASE_URL")
 	if connStr == "" {
 		// Log warning and return if the environment variable is not set
-		log.Println("WARNING: DATABASE_URL environment variable is not set. Database functions will be disabled.")
+		slog.Warn("DATABASE_URL environment variable is not set. Database functions will be disabled.")
 		Pool = nil
 		return
 	}
 
 	config, err := pgxpool.ParseConfig(connStr)
 	if err != nil {
-		log.Printf("WARNING: Unable to parse DATABASE_URL configuration: %v. Database functions will be disabled.", err)
+		slog.Warn("Unable to parse DATABASE_URL configuration: %v. Database functions will be disabled.", err)
 		Pool = nil
 		return
 	}
@@ -41,14 +41,14 @@ func InitPool() {
 	// Attempt to create the connection pool
 	pool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
-		log.Printf("WARNING: Unable to create connection pool: %v. Database functions will be disabled.", err)
+		slog.Warn("Unable to create connection pool: %v. Database functions will be disabled.", err)
 		Pool = nil
 		return
 	}
 
 	// Attempt to ping the database
 	if err = pool.Ping(ctx); err != nil {
-		log.Printf("WARNING: Database connection failed to ping: %v. Database functions will be disabled.", err)
+		slog.Warn("Database connection failed to ping: %v. Database functions will be disabled.", err)
 		// Close the temporary pool if ping failed, before setting the global Pool to nil
 		pool.Close()
 		Pool = nil
@@ -57,11 +57,11 @@ func InitPool() {
 
 	// Success
 	Pool = pool
-	log.Println("PostgreSQL connection pool successfully initialized.")
+	slog.Warn("PostgreSQL connection pool successfully initialized.")
 
 	// Initialize database schema
 	if err := InitSchema(ctx); err != nil {
-		log.Printf("WARNING: Failed to initialize database schema: %v. Some features may not work.", err)
+		slog.Error("Failed to initialize database schema: %v. Exiting application.", err)
 	}
 }
 
@@ -132,7 +132,7 @@ CREATE INDEX IF NOT EXISTS idx_repo_arch_date ON container_pull_metrics (repo_na
 		}
 	}
 
-	log.Println("Database schema initialized successfully.")
+	slog.Info("Database schema initialized successfully.")
 	return nil
 }
 
@@ -140,6 +140,6 @@ CREATE INDEX IF NOT EXISTS idx_repo_arch_date ON container_pull_metrics (repo_na
 func ClosePool() {
 	if Pool != nil {
 		Pool.Close()
-		log.Println("PostgreSQL connection pool closed.")
+		slog.Info("PostgreSQL connection pool closed.")
 	}
 }
