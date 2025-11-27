@@ -20,18 +20,6 @@
 # - The `volumes` section ensures data persistence for the OCI registry.
 # - Environment variables are used to configure services for local execution.
 services:
-  postgres:
-    image: postgres:18.1
-    container_name: postgres-container
-    environment:
-      POSTGRES_DB: staticreg
-      POSTGRES_USER: staticreg
-      POSTGRES_PASSWORD: password
-    expose:
-      - "5432"
-    ports:
-      - "5432:5432"
-
   oci-registry:
     image: registry:3
     container_name: oci-registry
@@ -45,3 +33,21 @@ services:
     environment:
       OTEL_TRACES_EXPORTER: "none"
       REGISTRY_LOG_LEVEL: "info"
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    restart: unless-stopped
+
+volumes:
+  prometheus_data:

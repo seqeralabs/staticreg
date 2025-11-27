@@ -19,6 +19,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 const (
@@ -94,6 +95,7 @@ func New(
 	r.Use(ignoredUAMiddleware)
 	r.GET("/robots.txt", robotsTxtHandler)
 	r.GET("/service-info", serviceInfoHandler(si))
+	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
 	apiRoutes := r.Group("/api")
 	{
