@@ -328,4 +328,3 @@ export METRICS_BUFFER_SIZE=5000
 
 ## Related Documentation
 - [Webhook Batching Architecture](WEBHOOK_BATCHING.md)
-- [Database Schema](../pkg/sql/event_schema.sql)
