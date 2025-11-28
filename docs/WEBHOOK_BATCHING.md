@@ -44,22 +44,22 @@ Configure the batching behavior via environment variables:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `METRICS_BATCH_SIZE` | 100 | Number of events to batch before flushing |
-| `METRICS_FLUSH_INTERVAL` | 5s | Maximum time to wait before flushing partial batch |
-| `METRICS_BUFFER_SIZE` | 10000 | Channel buffer size (max queued events) |
+| `STATICREG_METRICS_BATCH_SIZE` | 100 | Number of events to batch before flushing |
+| `STATICREG_METRICS_FLUSH_INTERVAL` | 5s | Maximum time to wait before flushing partial batch |
+| `STATICREG_METRICS_BUFFER_SIZE` | 10000 | Channel buffer size (max queued events) |
 
 ### Example Configuration
 
 ```bash
 # High-throughput configuration
-export METRICS_BATCH_SIZE=500
-export METRICS_FLUSH_INTERVAL=10s
-export METRICS_BUFFER_SIZE=50000
+export STATICREG_METRICS_BATCH_SIZE=500
+export STATICREG_METRICS_FLUSH_INTERVAL=10s
+export STATICREG_METRICS_BUFFER_SIZE=50000
 
 # Low-latency configuration
-export METRICS_BATCH_SIZE=50
-export METRICS_FLUSH_INTERVAL=1s
-export METRICS_BUFFER_SIZE=5000
+export STATICREG_METRICS_BATCH_SIZE=50
+export STATICREG_METRICS_FLUSH_INTERVAL=1s
+export STATICREG_METRICS_BUFFER_SIZE=5000
 ```
 
 ## Operational Metrics
@@ -78,8 +78,8 @@ The `BatchServiceAdapter` exposes the following metrics via `GetMetrics()`:
 
 **Critical alerts:**
 
-- `events_dropped > 0`: Buffer overflow occurring, increase `METRICS_BUFFER_SIZE` or scale database
-- `current_queue_size` approaching `METRICS_BUFFER_SIZE`: Backlog building up
+- `events_dropped > 0`: Buffer overflow occurring, increase `STATICREG_METRICS_BUFFER_SIZE` or scale database
+- `current_queue_size` approaching `STATICREG_METRICS_BUFFER_SIZE`: Backlog building up
 - `events_flushed` stagnant while `events_received` increasing: Database write issues
 
 ## Performance Characteristics
@@ -94,7 +94,7 @@ The `BatchServiceAdapter` exposes the following metrics via `GetMetrics()`:
 ### Latency Trade-offs
 
 - **Webhook response**: Reduced from ~20ms to <1ms
-- **Metrics visibility**: Delayed by up to `METRICS_FLUSH_INTERVAL` (default 5s)
+- **Metrics visibility**: Delayed by up to `STATICREG_METRICS_FLUSH_INTERVAL` (default 5s)
 - **Event loss risk**: Possible if buffer overflows (logged and tracked)
 
 ## Graceful Shutdown
@@ -196,10 +196,10 @@ Key test scenarios:
 
 1. **Start with defaults**: The default configuration (batch size 100, flush interval 5s, buffer 10K) is suitable for most workloads
 2. **Monitor `events_dropped`**: Set up alerts if this metric is non-zero
-3. **Tune buffer size**: If drops occur, increase `METRICS_BUFFER_SIZE` before scaling the database
+3. **Tune buffer size**: If drops occur, increase `STATICREG_METRICS_BUFFER_SIZE` before scaling the database
 4. **Database scaling**: If queue depth grows consistently, consider:
    - Increasing database write capacity
-   - Reducing `METRICS_FLUSH_INTERVAL` for faster draining
+   - Reducing `STATICREG_METRICS_FLUSH_INTERVAL` for faster draining
    - Horizontal scaling with read replicas (if reading metrics)
 
 ## Future Enhancements

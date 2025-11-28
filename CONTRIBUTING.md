@@ -37,10 +37,10 @@ Set up the database (if using webhook/metrics features):
 
 ```bash
 # Set database connection string
-export DATABASE_URL="postgresql://staticreg:password@localhost:5432/staticreg"
+export STATICREG_DB_URL="postgresql://staticreg:password@localhost:5432/staticreg"
 
 # Apply database schema
-psql $DATABASE_URL -f sql/event_schema.sql
+psql $STATICREG_DB_URL -f sql/event_schema.sql
 ```
 
 Start staticreg
@@ -52,7 +52,7 @@ Start staticreg
 By default, staticreg will:
 - Serve the web UI on http://localhost:8093
 - Connect to the registry at localhost:5000
-- Store webhook events in PostgreSQL (if DATABASE_URL is set)
+- Store webhook events in PostgreSQL (if STATICREG_DB_URL is set)
 
 ## Build (without releasing)
 
@@ -72,7 +72,7 @@ To test the webhook integration locally:
 
 2. Start staticreg:
    ```bash
-   export DATABASE_URL="postgresql://staticreg:password@localhost:5432/staticreg"
+   export STATICREG_DB_URL="postgresql://staticreg:password@localhost:5432/staticreg"
    go run main.go serve
    ```
 
@@ -83,7 +83,7 @@ To test the webhook integration locally:
 
 4. Verify metrics are stored in the database:
    ```bash
-   psql $DATABASE_URL -c "SELECT pull_date, repo_name, tag, architecture, pull_count FROM container_pull_metrics ORDER BY pull_date DESC LIMIT 5;"
+   psql $STATICREG_DB_URL -c "SELECT pull_date, repo_name, tag, architecture, pull_count FROM container_pull_metrics ORDER BY pull_date DESC LIMIT 5;"
    ```
 
 ## Release

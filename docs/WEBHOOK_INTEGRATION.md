@@ -13,7 +13,7 @@ Staticreg can receive webhook notifications from Docker Distribution registries 
 3. Network connectivity between the registry and staticreg
 4. Staticreg running and accessible to the registry
 
-**Note:** Staticreg can run without a database for basic registry browsing. Webhook events will be accepted but not persisted if `DATABASE_URL` is not configured.
+**Note:** Staticreg can run without a database for basic registry browsing. Webhook events will be accepted but not persisted if `STATICREG_DB_URL` is not configured.
 
 ## Setup Steps
 
@@ -42,7 +42,7 @@ psql -d staticreg -f sql/event_schema.sql
 Set the database connection string for staticreg:
 
 ```bash
-export DATABASE_URL="postgresql://username:password@localhost:5432/staticreg"
+export STATICREG_DB_URL="postgresql://username:password@localhost:5432/staticreg"
 ```
 
 Full connection string format:
@@ -50,7 +50,7 @@ Full connection string format:
 postgresql://[user[:password]@][host][:port][/dbname][?param1=value1&...]
 ```
 
-**Note:** The `DATABASE_URL` environment variable is optional. If not set, staticreg will start successfully but webhook events will not be stored. This allows running staticreg without a database for basic registry browsing functionality.
+**Note:** The `STATICREG_DB_URL` environment variable is optional. If not set, staticreg will start successfully but webhook events will not be stored. This allows running staticreg without a database for basic registry browsing functionality.
 
 ### 3. Configure Docker Distribution Registry
 
@@ -133,8 +133,8 @@ services:
     ports:
       - "8093:8093"
     environment:
-      DATABASE_URL: postgresql://staticreg:password@postgres:5432/staticreg
-      REGISTRY_HOSTNAME: oci-registry:5000
+      STATICREG_DB_URL: postgresql://staticreg:password@postgres:5432/staticreg
+      STATICREG_REGISTRY_HOSTNAME: oci-registry:5000
     depends_on:
       - postgres
 ```
@@ -272,18 +272,18 @@ WHERE pull_date = CURRENT_DATE;
 
 ### Events Not Being Stored
 
-1. **Check if DATABASE_URL is set:**
+1. **Check if STATICREG_DB_URL is set:**
    ```bash
-   echo $DATABASE_URL
+   echo $STATICREG_DB_URL
    ```
    If not set, staticreg will accept webhooks but not store them. Check startup logs for:
    ```
-   WARNING: DATABASE_URL environment variable is not set. Database functions will be disabled.
+   WARNING: STATICREG_DB_URL environment variable is not set. Database functions will be disabled.
    ```
 
 2. **Verify database connection:**
    ```bash
-   psql $DATABASE_URL -c "SELECT 1"
+   psql $STATICREG_DB_URL -c "SELECT 1"
    ```
 
 3. **Check database schema:**

@@ -50,13 +50,13 @@ type BatchServiceAdapter struct {
 
 // NewBatchServiceAdapter creates a new batch webhook service adapter
 // Configuration is pulled from environment variables with sensible defaults:
-//   - METRICS_BATCH_SIZE: Number of events to batch before flushing (default: 100)
-//   - METRICS_FLUSH_INTERVAL: Time interval to force flush (default: 5s)
-//   - METRICS_BUFFER_SIZE: Channel buffer size (default: 10000)
+//   - STATICREG_METRICS_BATCH_SIZE: Number of events to batch before flushing (default: 100)
+//   - STATICREG_METRICS_FLUSH_INTERVAL: Time interval to force flush (default: 5s)
+//   - STATICREG_METRICS_BUFFER_SIZE: Channel buffer size (default: 10000)
 func NewBatchServiceAdapter(log *slog.Logger, pool *pgxpool.Pool) *BatchServiceAdapter {
-	batchSize := getEnvInt("METRICS_BATCH_SIZE", 100)
-	flushInterval := getEnvDuration("METRICS_FLUSH_INTERVAL", 5*time.Second)
-	bufferSize := getEnvInt("METRICS_BUFFER_SIZE", 10000)
+	batchSize := getEnvInt("STATICREG_METRICS_BATCH_SIZE", 100)
+	flushInterval := getEnvDuration("STATICREG_METRICS_FLUSH_INTERVAL", 5*time.Second)
+	bufferSize := getEnvInt("STATICREG_METRICS_BUFFER_SIZE", 10000)
 
 	adapter := &BatchServiceAdapter{
 		Logger:        log,

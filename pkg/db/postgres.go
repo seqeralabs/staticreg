@@ -12,20 +12,59 @@ import (
 	schemasql "github.com/seqeralabs/staticreg/pkg/sql"
 )
 
+// buildConnectionString constructs a PostgreSQL connection string from environment variables.
+// It prioritizes STATICREG_DB_URL if set, otherwise builds the connection string from individual
+// STATICREG_DB_* environment variables. Returns empty string if no configuration is provided.
+func buildConnectionString() string {
+	// First, check if STATICREG_DB_URL is provided (highest priority)
+	if connStr := os.Getenv("STATICREG_DB_URL"); connStr != "" {
+		return connStr
+	}
+
+	// Build connection string from individual components
+	host := os.Getenv("STATICREG_DB_HOST")
+	port := os.Getenv("STATICREG_DB_PORT")
+	user := os.Getenv("STATICREG_DB_USER")
+	password := os.Getenv("STATICREG_DB_PASSWORD")
+	dbname := os.Getenv("STATICREG_DB_NAME")
+	sslmode := os.Getenv("STATICREG_DB_SSLMODE")
+
+	// Require at minimum: host, user, and dbname
+	if host == "" || user == "" || dbname == "" {
+		return ""
+	}
+
+	// Build the connection string with required fields
+	connStr := fmt.Sprintf("host=%s user=%s dbname=%s", host, user, dbname)
+
+	// Add optional fields if provided
+	if port != "" {
+		connStr += fmt.Sprintf(" port=%s", port)
+	}
+	if password != "" {
+		connStr += fmt.Sprintf(" password=%s", password)
+	}
+	if sslmode != "" {
+		connStr += fmt.Sprintf(" sslmode=%s", sslmode)
+	}
+
+	return connStr
+}
+
 // InitPool attempts to initialize the PostgreSQL connection pool.
 // It logs a warning if initialization fails and returns nil, allowing the app to continue.
 // Returns the connection pool or nil if initialization failed.
 func InitPool() *pgxpool.Pool {
-	connStr := os.Getenv("DATABASE_URL")
+	connStr := buildConnectionString()
 	if connStr == "" {
 		// Log warning and return if the environment variable is not set
-		slog.Warn("DATABASE_URL environment variable is not set. Database functions will be disabled.")
+		slog.Warn("Database configuration not provided. Set STATICREG_DB_URL or individual STATICREG_DB_* variables. Database functions will be disabled.")
 		return nil
 	}
 
 	config, err := pgxpool.ParseConfig(connStr)
 	if err != nil {
-		slog.Warn("Unable to parse DATABASE_URL configuration: %v. Database functions will be disabled.", logger.ErrAttr(err))
+		slog.Warn("Unable to parse database configuration: %v. Database functions will be disabled.", logger.ErrAttr(err))
 		return nil
 	}
 
