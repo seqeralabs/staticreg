@@ -34,6 +34,7 @@ spec:
               memory: "250Mi"
               cpu: "1000m"
           env:
+            # Registry Configuration
             - name: STATICREG_REGISTRY_USER
               valueFrom:
                 secretKeyRef:
@@ -49,3 +50,59 @@ spec:
                 secretKeyRef:
                   name: registry-credentials
                   key: STATICREG_REGISTRY_HOSTNAME
+
+            # Database Configuration (using individual variables)
+            # Alternative: use STATICREG_DB_URL for connection string
+            - name: STATICREG_DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: staticreg-db-credentials
+                  key: STATICREG_DB_HOST
+            - name: STATICREG_DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: staticreg-db-credentials
+                  key: STATICREG_DB_PORT
+                  optional: true
+            - name: STATICREG_DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: staticreg-db-credentials
+                  key: STATICREG_DB_USER
+            - name: STATICREG_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: staticreg-db-credentials
+                  key: STATICREG_DB_PASSWORD
+                  optional: true
+            - name: STATICREG_DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: staticreg-db-credentials
+                  key: STATICREG_DB_NAME
+            - name: STATICREG_DB_SSLMODE
+              valueFrom:
+                secretKeyRef:
+                  name: staticreg-db-credentials
+                  key: STATICREG_DB_SSLMODE
+                  optional: true
+
+            # Webhook Batching Configuration
+            - name: STATICREG_METRICS_BATCH_SIZE
+              valueFrom:
+                configMapKeyRef:
+                  name: staticreg-config
+                  key: STATICREG_METRICS_BATCH_SIZE
+                  optional: true
+            - name: STATICREG_METRICS_FLUSH_INTERVAL
+              valueFrom:
+                configMapKeyRef:
+                  name: staticreg-config
+                  key: STATICREG_METRICS_FLUSH_INTERVAL
+                  optional: true
+            - name: STATICREG_METRICS_BUFFER_SIZE
+              valueFrom:
+                configMapKeyRef:
+                  name: staticreg-config
+                  key: STATICREG_METRICS_BUFFER_SIZE
+                  optional: true
