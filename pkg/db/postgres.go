@@ -51,7 +51,7 @@ func InitPool() *pgxpool.Pool {
 	}
 
 	// Success
-	slog.Warn("PostgreSQL connection pool successfully initialized.")
+	slog.Info("PostgreSQL connection pool successfully initialized.")
 
 	// Initialize database schema
 	if err := initSchema(ctx, pool); err != nil {
