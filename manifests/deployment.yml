@@ -34,18 +34,18 @@ spec:
               memory: "250Mi"
               cpu: "1000m"
           env:
-            - name: REGISTRY_USER
+            - name: STATICREG_REGISTRY_USER
               valueFrom:
                 secretKeyRef:
                   name: registry-credentials
                   key: REGISTRY_USER
-            - name: REGISTRY_PASSWORD
+            - name: STATICREG_REGISTRY_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: registry-credentials
-                  key: REGISTRY_PASSWORD
-            - name: REGISTRY_HOSTNAME
+                  key: STATICREG_REGISTRY_PASSWORD
+            - name: STATICREG_REGISTRY_HOSTNAME
               valueFrom:
                 secretKeyRef:
                   name: registry-credentials
-                  key: REGISTRY_HOSTNAME
+                  key: STATICREG_REGISTRY_HOSTNAME

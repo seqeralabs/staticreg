@@ -164,7 +164,7 @@ notifications:
   - Format: `postgresql://[user[:password]@][host][:port][/dbname]`
   - If not set, application runs without metrics persistence
 - `REGISTRY_USER` - Registry authentication username
-- `REGISTRY_PASSWORD` - Registry authentication password
+- `STATICREG_REGISTRY_PASSWORD` - Registry authentication password
 - `WAVE_SERVER_URL` - Wave server URL for security scanning
 - `PORT` - HTTP server port (default: 8093)
 
