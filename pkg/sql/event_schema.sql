@@ -1,6 +1,3 @@
--- Drop old table if exists
-DROP TABLE IF EXISTS container_pull_metrics ;
-
 -- Create new aggregated metrics table
 CREATE TABLE IF NOT EXISTS container_pull_metrics (
     id BIGSERIAL PRIMARY KEY,
