@@ -11,6 +11,7 @@ import (
 
 	cache "github.com/chenyahui/gin-cache"
 	"github.com/chenyahui/gin-cache/persist"
+	"github.com/jackc/pgx/v5/pgxpool"
 	sloggin "github.com/samber/slog-gin"
 	"github.com/seqeralabs/staticreg/pkg/registry/async"
 	"github.com/seqeralabs/staticreg/pkg/serviceinfo"
@@ -57,6 +58,7 @@ func New(
 	log *slog.Logger,
 	cacheDuration time.Duration,
 	ignoredUserAgents []string,
+	dbPool *pgxpool.Pool,
 ) (*Server, error) {
 	gin.SetMode(gin.ReleaseMode)
 
@@ -76,7 +78,7 @@ func New(
 	r.Use(sloggin.NewWithConfig(log, lmConfig))
 	r.Use(gin.Recovery())
 	store := persist.NewMemoryStore(cacheDuration)
-	whService := webhook.NewServiceAdapter(log)
+	whService := webhook.NewServiceAdapter(log, dbPool)
 
 	r.Use(injectLoggerMiddleware(log))
 	r.NoRoute(serverImpl.NoRouteHandler)

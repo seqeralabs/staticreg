@@ -5,21 +5,23 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/seqeralabs/staticreg/pkg/db"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type ServiceAdapter struct {
 	Logger *slog.Logger
+	Pool   *pgxpool.Pool
 }
 
-func NewServiceAdapter(log *slog.Logger) *ServiceAdapter {
+func NewServiceAdapter(log *slog.Logger, pool *pgxpool.Pool) *ServiceAdapter {
 	return &ServiceAdapter{
 		Logger: log,
+		Pool:   pool,
 	}
 }
 
 func (a *ServiceAdapter) SavePullEvent(ctx context.Context, event *DistributionEvent) error {
-	if db.Pool == nil {
+	if a.Pool == nil {
 		a.Logger.Debug("Skipping pull event save: Database pool is not active.")
 		return nil
 	}
@@ -41,7 +43,7 @@ func (a *ServiceAdapter) SavePullEvent(ctx context.Context, event *DistributionE
             pull_count = container_pull_metrics.pull_count + 1,
             updated_at = NOW()`
 
-	_, err := db.Pool.Exec(ctx, query,
+	_, err := a.Pool.Exec(ctx, query,
 		pullDate,
 		repoName,
 		tag,

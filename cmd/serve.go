@@ -22,6 +22,7 @@ import (
 
 	"log/slog"
 
+	"github.com/seqeralabs/staticreg/pkg/db"
 	"github.com/seqeralabs/staticreg/pkg/filler"
 	"github.com/seqeralabs/staticreg/pkg/observability/logger"
 	"github.com/seqeralabs/staticreg/pkg/registry/async"
@@ -66,8 +67,14 @@ var serveCmd = &cobra.Command{
 
 		filler := filler.New(asyncClient, rootCfg.RegistryHostname, "/")
 
+		// Initialize database pool
+		pool := db.InitPool()
+		if pool != nil {
+			defer pool.Close()
+		}
+
 		regServer := staticreg.New(asyncClient, filler, rootCfg.RegistryHostname)
-		srv, err := server.New(bindAddr, regServer, asyncClient, log, cacheDuration, ignoredUserAgents)
+		srv, err := server.New(bindAddr, regServer, asyncClient, log, cacheDuration, ignoredUserAgents, pool)
 		if err != nil {
 			slog.Error("error creating server", logger.ErrAttr(err))
 			return

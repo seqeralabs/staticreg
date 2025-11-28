@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -13,26 +12,21 @@ import (
 	schemasql "github.com/seqeralabs/staticreg/pkg/sql"
 )
 
-// Pool is the global, exported database connection pool instance.
-// It will be nil if the connection failed.
-var Pool *pgxpool.Pool
-
 // InitPool attempts to initialize the PostgreSQL connection pool.
-// It logs a warning if initialization fails and sets Pool to nil, allowing the app to continue.
-func InitPool() {
+// It logs a warning if initialization fails and returns nil, allowing the app to continue.
+// Returns the connection pool or nil if initialization failed.
+func InitPool() *pgxpool.Pool {
 	connStr := os.Getenv("DATABASE_URL")
 	if connStr == "" {
 		// Log warning and return if the environment variable is not set
 		slog.Warn("DATABASE_URL environment variable is not set. Database functions will be disabled.")
-		Pool = nil
-		return
+		return nil
 	}
 
 	config, err := pgxpool.ParseConfig(connStr)
 	if err != nil {
 		slog.Warn("Unable to parse DATABASE_URL configuration: %v. Database functions will be disabled.", logger.ErrAttr(err))
-		Pool = nil
-		return
+		return nil
 	}
 
 	// Configure connection pool settings
@@ -45,58 +39,47 @@ func InitPool() {
 	pool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
 		slog.Warn("Unable to create connection pool: %v. Database functions will be disabled.", logger.ErrAttr(err))
-		Pool = nil
-		return
+		return nil
 	}
 
 	// Attempt to ping the database
 	if err = pool.Ping(ctx); err != nil {
 		slog.Warn("Database connection failed to ping: %v. Database functions will be disabled.", logger.ErrAttr(err))
-		// Close the temporary pool if ping failed, before setting the global Pool to nil
+		// Close the pool if ping failed
 		pool.Close()
-		Pool = nil
-		return
-	}
-
-	// Success
-	Pool = pool
-	slog.Warn("PostgreSQL connection pool successfully initialized.")
-
-	// Initialize database schema
-	if err := InitSchema(ctx); err != nil {
-		slog.Error("Failed to initialize database schema: %v. Exiting application.", logger.ErrAttr(err))
-		os.Exit(1)
-	}
-}
-
-// InitSchema creates the database schema if it doesn't exist
-func InitSchema(ctx context.Context) error {
-	if Pool == nil {
 		return nil
 	}
 
-	// Load SQL schema from embedded file
-	// Filter out DROP TABLE statements since we don't want to drop existing data during initialization
-	schemaLines := strings.Split(schemasql.EventSchemaSQL, "\n")
-	var filteredLines []string
-	for _, line := range schemaLines {
-		trimmed := strings.TrimSpace(line)
-		// Skip DROP TABLE statements
-		if strings.HasPrefix(strings.ToUpper(trimmed), "DROP TABLE") {
-			continue
-		}
-		filteredLines = append(filteredLines, line)
-	}
-	schema := strings.Join(filteredLines, "\n")
+	// Success
+	slog.Warn("PostgreSQL connection pool successfully initialized.")
 
-	_, err := Pool.Exec(ctx, schema)
+	// Initialize database schema
+	if err := initSchema(ctx, pool); err != nil {
+		slog.Error("Failed to initialize database schema: %v. Exiting application.", logger.ErrAttr(err))
+		pool.Close()
+		os.Exit(1)
+	}
+
+	return pool
+}
+
+// initSchema creates the database schema if it doesn't exist
+func initSchema(ctx context.Context, pool *pgxpool.Pool) error {
+	if pool == nil {
+		return nil
+	}
+
+	slog.Info("Initializing database schema...")
+
+	// Execute the SQL schema directly (includes DROP TABLE IF EXISTS which is safe)
+	_, err := pool.Exec(ctx, schemasql.EventSchemaSQL)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to execute schema: %w", err)
 	}
 
 	// Validate that the table was created successfully
 	var tableExists bool
-	err = Pool.QueryRow(ctx, `
+	err = pool.QueryRow(ctx, `
 		SELECT EXISTS (
 			SELECT FROM information_schema.tables
 			WHERE table_schema = 'public'
@@ -113,7 +96,7 @@ func InitSchema(ctx context.Context) error {
 	expectedIndexes := []string{"idx_pull_date", "idx_repo_date", "idx_repo_arch_date"}
 	for _, indexName := range expectedIndexes {
 		var indexExists bool
-		err = Pool.QueryRow(ctx, `
+		err = pool.QueryRow(ctx, `
 			SELECT EXISTS (
 				SELECT FROM pg_indexes
 				WHERE schemaname = 'public'
@@ -130,12 +113,4 @@ func InitSchema(ctx context.Context) error {
 
 	slog.Info("Database schema initialized successfully.")
 	return nil
-}
-
-// ClosePool closes the database connection pool if it was initialized.
-func ClosePool() {
-	if Pool != nil {
-		Pool.Close()
-		slog.Info("PostgreSQL connection pool closed.")
-	}
 }
