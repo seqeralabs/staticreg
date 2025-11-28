@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -18,6 +19,11 @@ func NewServiceAdapter(log *slog.Logger, pool *pgxpool.Pool) *ServiceAdapter {
 		Logger: log,
 		Pool:   pool,
 	}
+}
+
+// Close is a no-op for synchronous ServiceAdapter (implements WebhookService interface)
+func (a *ServiceAdapter) Close(timeout time.Duration) error {
+	return nil
 }
 
 func (a *ServiceAdapter) SavePullEvent(ctx context.Context, event *DistributionEvent) error {

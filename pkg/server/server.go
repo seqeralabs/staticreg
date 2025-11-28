@@ -30,14 +30,10 @@ var (
 	robotsTxtETag = fmt.Sprintf("\"%x\"", sha256.Sum256([]byte(robotsTxt)))
 )
 
-type WebhookService interface {
-	SavePullEvent(ctx context.Context, event *webhook.DistributionEvent) error
-}
-
 type Server struct {
 	server         *http.Server
 	gin            *gin.Engine
-	webhookService WebhookService
+	webhookService webhook.WebhookService
 }
 
 type ServerImpl interface {
@@ -90,7 +86,7 @@ func New(
 	r.Use(sloggin.NewWithConfig(log, lmConfig))
 	r.Use(gin.Recovery())
 	store := persist.NewMemoryStore(cacheDuration)
-	whService := webhook.NewServiceAdapter(log, dbPool)
+	whService := webhook.NewBatchServiceAdapter(log, dbPool)
 
 	r.Use(injectLoggerMiddleware(log))
 	r.NoRoute(serverImpl.NoRouteHandler)
@@ -141,7 +137,15 @@ func (s *Server) Start(ctx context.Context) error {
 	g.Go(s.server.ListenAndServe)
 	g.Go(func() error {
 		<-ctx.Done()
-		return s.server.Shutdown(context.Background())
+		shutdownCtx := context.Background()
+		if err := s.server.Shutdown(shutdownCtx); err != nil {
+			return err
+		}
+		// Close webhook service with 10 second timeout to flush pending events
+		if err := s.webhookService.Close(10 * time.Second); err != nil {
+			return err
+		}
+		return nil
 	})
 	return g.Wait()
 }
@@ -194,7 +198,7 @@ func serviceInfoHandler(si *serviceinfo.ServiceInfo) gin.HandlerFunc {
 	}
 }
 
-func registryWebhookHandler(whService WebhookService, log *slog.Logger) gin.HandlerFunc {
+func registryWebhookHandler(whService webhook.WebhookService, log *slog.Logger) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var envelope webhook.DistributionEventEnvelope
 		if err := ctx.ShouldBindJSON(&envelope); err != nil {
