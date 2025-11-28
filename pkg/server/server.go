@@ -51,6 +51,18 @@ type ServerImpl interface {
 	InternalServerErrorHandler(ctx *gin.Context)
 }
 
+// WebhookResponse represents the response returned from webhook endpoint
+type WebhookResponse struct {
+	Message         string `json:"message"`
+	EventsProcessed int    `json:"eventsProcessed"`
+	EventsSkipped   int    `json:"eventsSkipped"`
+}
+
+// ErrorResponse represents an error response
+type ErrorResponse struct {
+	Error string `json:"error"`
+}
+
 func New(
 	bindAddr string,
 	serverImpl ServerImpl,
@@ -187,7 +199,9 @@ func registryWebhookHandler(whService WebhookService, log *slog.Logger) gin.Hand
 		var envelope webhook.DistributionEventEnvelope
 		if err := ctx.ShouldBindJSON(&envelope); err != nil {
 			log.Warn("Failed to parse webhook payload", "error", err)
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON payload"})
+			ctx.JSON(http.StatusBadRequest, ErrorResponse{
+				Error: "Invalid JSON payload",
+			})
 			return
 		}
 
@@ -228,10 +242,10 @@ func registryWebhookHandler(whService WebhookService, log *slog.Logger) gin.Hand
 			"eventsProcessed", eventsProcessed,
 			"eventsSkipped", eventsSkipped)
 
-		ctx.JSON(http.StatusOK, gin.H{
-			"message":         "Webhook processed successfully",
-			"eventsProcessed": eventsProcessed,
-			"eventsSkipped":   eventsSkipped,
+		ctx.JSON(http.StatusOK, WebhookResponse{
+			Message:         "Webhook processed successfully",
+			EventsProcessed: eventsProcessed,
+			EventsSkipped:   eventsSkipped,
 		})
 	}
 }
