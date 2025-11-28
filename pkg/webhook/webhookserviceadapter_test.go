@@ -5,20 +5,21 @@ import (
 	"log/slog"
 	"testing"
 	"time"
-
-	"github.com/seqeralabs/staticreg/pkg/db"
 )
 
 func TestNewServiceAdapter(t *testing.T) {
 	logger := slog.Default()
 
-	adapter := NewServiceAdapter(logger)
+	adapter := NewServiceAdapter(logger, nil)
 
 	if adapter == nil {
 		t.Fatal("Expected adapter to be initialized, got nil")
 	}
 	if adapter.Logger != logger {
 		t.Error("Logger was not correctly assigned")
+	}
+	if adapter.Pool != nil {
+		t.Error("Expected Pool to be nil")
 	}
 }
 
@@ -37,13 +38,8 @@ func TestSavePullEvent(t *testing.T) {
 		},
 	}
 
-	originalPool := db.Pool
-
-	defer func() { db.Pool = originalPool }()
-
 	t.Run("DB_Disconnected_Graceful_Skip", func(t *testing.T) {
-		db.Pool = nil
-		adapter := NewServiceAdapter(slog.Default())
+		adapter := NewServiceAdapter(slog.Default(), nil)
 
 		err := adapter.SavePullEvent(ctx, &testEvent)
 
