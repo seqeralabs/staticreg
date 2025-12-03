@@ -1,0 +1,24 @@
+version: 0.1
+log:
+  level: debug
+  fields:
+    service: registry
+
+storage:
+  cache:
+    blobdescriptor: inmemory
+  filesystem:
+    rootdirectory: /var/lib/registry
+
+http:
+  addr: :5000
+  headers:
+    X-Content-Type-Options: [nosniff]
+
+notifications:
+  endpoints:
+    - name: test-webhook
+      url: http://host.docker.internal:8093/api/webhook/registry
+      timeout: 5s
+      threshold: 3
+      backoff: 1s

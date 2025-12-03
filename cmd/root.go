@@ -65,7 +65,7 @@ func Execute() {
 func init() {
 	defaultRegistry := "localhost:5000"
 	defaultWaveServerUrl := "https://wave.seqera.io"
-	envRegistry := os.Getenv("REGISTRY_HOSTNAME")
+	envRegistry := os.Getenv("STATICREG_REGISTRY_HOSTNAME")
 	envWaveServerUrl := os.Getenv("WAVE_SERVER_URL")
 	if len(envRegistry) > 0 {
 		defaultRegistry = envRegistry
@@ -73,9 +73,9 @@ func init() {
 	if len(envWaveServerUrl) > 0 {
 		defaultWaveServerUrl = envWaveServerUrl
 	}
-	rootCmd.PersistentFlags().StringVar(&rootCfg.RegistryHostname, "registry", defaultRegistry, "registry hostname, can be set via the env var REGISTRY_HOSTNAME as well")
+	rootCmd.PersistentFlags().StringVar(&rootCfg.RegistryHostname, "registry", defaultRegistry, "registry hostname, can be set via the env var STATICREG_REGISTRY_HOSTNAME as well")
 	rootCmd.PersistentFlags().StringVar(&rootCfg.RegistryUser, "user", os.Getenv("REGISTRY_USER"), "registry user to use for authentication against the provided registry, can be set via the env var REGISTRY_USER as well")
-	rootCmd.PersistentFlags().StringVar(&rootCfg.RegistryPassword, "password", os.Getenv("REGISTRY_PASSWORD"), "registry password to use for authentication against the provided registry, can be set via the env var REGISTRY_PASSWORD as well")
+	rootCmd.PersistentFlags().StringVar(&rootCfg.RegistryPassword, "password", os.Getenv("STATICREG_REGISTRY_PASSWORD"), "registry password to use for authentication against the provided registry, can be set via the env var STATICREG_REGISTRY_PASSWORD as well")
 	rootCmd.PersistentFlags().BoolVar(&rootCfg.SkipTLSVerify, "skip-tls-verify", false, "disable TLS certificate checks")
 	rootCmd.PersistentFlags().BoolVar(&rootCfg.TLSEnabled, "tls-enable", false, "enable TLS")
 	rootCmd.PersistentFlags().BoolVar(&rootCfg.LogInJSON, "json-logging", false, "log in JSON")

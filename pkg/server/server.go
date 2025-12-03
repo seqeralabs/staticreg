@@ -11,9 +11,12 @@ import (
 
 	cache "github.com/chenyahui/gin-cache"
 	"github.com/chenyahui/gin-cache/persist"
+	"github.com/jackc/pgx/v5/pgxpool"
 	sloggin "github.com/samber/slog-gin"
+	"github.com/seqeralabs/staticreg/pkg/registry/async"
 	"github.com/seqeralabs/staticreg/pkg/serviceinfo"
 	"github.com/seqeralabs/staticreg/pkg/static"
+	"github.com/seqeralabs/staticreg/pkg/webhook"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/gin-gonic/gin"
@@ -28,8 +31,9 @@ var (
 )
 
 type Server struct {
-	server *http.Server
-	gin    *gin.Engine
+	server         *http.Server
+	gin            *gin.Engine
+	webhookService webhook.WebhookService
 }
 
 type ServerImpl interface {
@@ -43,12 +47,26 @@ type ServerImpl interface {
 	InternalServerErrorHandler(ctx *gin.Context)
 }
 
+// WebhookResponse represents the response returned from webhook endpoint
+type WebhookResponse struct {
+	Message         string `json:"message"`
+	EventsProcessed int    `json:"eventsProcessed"`
+	EventsSkipped   int    `json:"eventsSkipped"`
+}
+
+// ErrorResponse represents an error response
+type ErrorResponse struct {
+	Error string `json:"error"`
+}
+
 func New(
 	bindAddr string,
 	serverImpl ServerImpl,
+	asyncRegistry *async.Async,
 	log *slog.Logger,
 	cacheDuration time.Duration,
 	ignoredUserAgents []string,
+	dbPool *pgxpool.Pool,
 ) (*Server, error) {
 	gin.SetMode(gin.ReleaseMode)
 
@@ -68,6 +86,8 @@ func New(
 	r.Use(sloggin.NewWithConfig(log, lmConfig))
 	r.Use(gin.Recovery())
 	store := persist.NewMemoryStore(cacheDuration)
+	whService := webhook.NewBatchServiceAdapter(log, dbPool)
+
 	r.Use(injectLoggerMiddleware(log))
 	r.NoRoute(serverImpl.NoRouteHandler)
 	r.Use(serverImpl.NotFoundHandler)
@@ -84,12 +104,13 @@ func New(
 	r.Use(ignoredUAMiddleware)
 	r.GET("/robots.txt", robotsTxtHandler)
 	r.GET("/service-info", serviceInfoHandler(si))
-	
+
 	apiRoutes := r.Group("/api")
 	{
 		apiRoutes.GET("/search", serverImpl.SearchHandler)
+		apiRoutes.POST("/webhook/registry", registryWebhookHandler(whService, log))
 	}
-	
+
 	htmlRoutes := r.Group("/")
 	{
 		r.GET("/", cache.CacheByRequestURI(store, cacheDuration), serverImpl.RepositoriesListHandler)
@@ -105,8 +126,9 @@ func New(
 	}
 
 	return &Server{
-		gin:    r,
-		server: srv,
+		gin:            r,
+		server:         srv,
+		webhookService: whService,
 	}, nil
 }
 
@@ -115,7 +137,15 @@ func (s *Server) Start(ctx context.Context) error {
 	g.Go(s.server.ListenAndServe)
 	g.Go(func() error {
 		<-ctx.Done()
-		return s.server.Shutdown(context.Background())
+		shutdownCtx := context.Background()
+		if err := s.server.Shutdown(shutdownCtx); err != nil {
+			return err
+		}
+		// Close webhook service with 10 second timeout to flush pending events
+		if err := s.webhookService.Close(10 * time.Second); err != nil {
+			return err
+		}
+		return nil
 	})
 	return g.Wait()
 }
@@ -165,5 +195,61 @@ func robotsTxtHandler(ctx *gin.Context) {
 func serviceInfoHandler(si *serviceinfo.ServiceInfo) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, si)
+	}
+}
+
+func registryWebhookHandler(whService webhook.WebhookService, log *slog.Logger) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		var envelope webhook.DistributionEventEnvelope
+		if err := ctx.ShouldBindJSON(&envelope); err != nil {
+			log.Warn("Failed to parse webhook payload", "error", err)
+			ctx.JSON(http.StatusBadRequest, ErrorResponse{
+				Error: "Invalid JSON payload",
+			})
+			return
+		}
+
+		eventsProcessed := 0
+		eventsSkipped := 0
+
+		for _, event := range envelope.Events {
+			// Skip events from staticreg itself to avoid counting internal manifest fetches
+			if event.IsFromStaticReg() {
+				log.Debug("Skipping event from staticreg itself",
+					"repository", event.Target.Repository,
+					"tag", event.Target.Tag,
+					"action", event.Action,
+					"userAgent", event.Request.UserAgent)
+				eventsSkipped++
+				continue
+			}
+
+			// Handle PULL events
+			if event.IsManifestPull() {
+				if err := whService.SavePullEvent(ctx, &event); err != nil {
+					log.Error("Failed to save pull event to database",
+						"repository", event.Target.Repository,
+						"error", err)
+				}
+				eventsProcessed++
+				continue
+			}
+
+			log.Debug("Skipping unhandled event action",
+				"action", event.Action,
+				"mediaType", event.Target.MediaType,
+				"repository", event.Target.Repository)
+		}
+
+		log.Info("Webhook processing completed",
+			"totalEvents", len(envelope.Events),
+			"eventsProcessed", eventsProcessed,
+			"eventsSkipped", eventsSkipped)
+
+		ctx.JSON(http.StatusOK, WebhookResponse{
+			Message:         "Webhook processed successfully",
+			EventsProcessed: eventsProcessed,
+			EventsSkipped:   eventsSkipped,
+		})
 	}
 }

@@ -7,7 +7,17 @@ To contribute you need
 - [GNU Make](https://www.gnu.org/software/make/): we use make to hide the details of running multiple commands to get builds done
 - Optional: [Docker](https://docs.docker.com/desktop/install/linux-install/): to build container images and for running the local development dependencies
 
-Start a local Registry and push an image to it
+Start the local development environment with Docker Compose (includes Registry and PostgreSQL):
+
+```bash
+docker-compose up -d
+```
+
+This starts:
+- PostgreSQL database on port 5432
+- OCI Registry on port 5000
+
+Alternatively, start a standalone registry and push an image to it:
 
 ```bash
 docker run -d -p 5000:5000 --name registry registry:3
@@ -23,11 +33,26 @@ make deps
 make
 ```
 
+Set up the database (if using webhook/metrics features):
+
+```bash
+# Set database connection string
+export STATICREG_DB_URL="postgresql://staticreg:password@localhost:5432/staticreg"
+
+# Apply database schema
+psql $STATICREG_DB_URL -f sql/event_schema.sql
+```
+
 Start staticreg
 
 ```bash
 ./_output/dist/staticreg serve
 ```
+
+By default, staticreg will:
+- Serve the web UI on http://localhost:8093
+- Connect to the registry at localhost:5000
+- Store webhook events in PostgreSQL (if STATICREG_DB_URL is set)
 
 ## Build (without releasing)
 
@@ -36,6 +61,30 @@ make clean
 make
 ```
 
+## Testing Webhook Integration
+
+To test the webhook integration locally:
+
+1. Ensure docker-compose services are running:
+   ```bash
+   docker-compose up -d
+   ```
+
+2. Start staticreg:
+   ```bash
+   export STATICREG_DB_URL="postgresql://staticreg:password@localhost:5432/staticreg"
+   go run main.go serve
+   ```
+
+3. Pull an image from the local registry to trigger webhook events:
+   ```bash
+   docker pull localhost:5000/alpine:latest
+   ```
+
+4. Verify metrics are stored in the database:
+   ```bash
+   psql $STATICREG_DB_URL -c "SELECT pull_date, repo_name, tag, architecture, pull_count FROM container_pull_metrics ORDER BY pull_date DESC LIMIT 5;"
+   ```
 
 ## Release
 Releasing is done via GitHub actions.
