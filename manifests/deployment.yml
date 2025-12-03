@@ -17,7 +17,7 @@ spec:
       restartPolicy: Always
       containers:
         - name: staticreg
-          image: cr.seqera.io/public/staticreg:0.4.7
+          image: cr.seqera.io/public/staticreg:0.6.0
           command:
             [
               "/staticreg",
@@ -39,7 +39,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: registry-credentials
-                  key: REGISTRY_USER
+                  key: STATICREG_REGISTRY_USER
             - name: STATICREG_REGISTRY_PASSWORD
               valueFrom:
                 secretKeyRef:

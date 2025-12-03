@@ -163,7 +163,7 @@ notifications:
 - `STATICREG_DB_URL` - PostgreSQL connection string for metrics tracking
   - Format: `postgresql://[user[:password]@][host][:port][/dbname]`
   - If not set, application runs without metrics persistence
-- `REGISTRY_USER` - Registry authentication username
+- `STATICREG_REGISTRY_USER` - Registry authentication username
 - `STATICREG_REGISTRY_PASSWORD` - Registry authentication password
 - `WAVE_SERVER_URL` - Wave server URL for security scanning
 - `PORT` - HTTP server port (default: 8093)
