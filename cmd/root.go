@@ -74,7 +74,7 @@ func init() {
 		defaultWaveServerUrl = envWaveServerUrl
 	}
 	rootCmd.PersistentFlags().StringVar(&rootCfg.RegistryHostname, "registry", defaultRegistry, "registry hostname, can be set via the env var STATICREG_REGISTRY_HOSTNAME as well")
-	rootCmd.PersistentFlags().StringVar(&rootCfg.RegistryUser, "user", os.Getenv("REGISTRY_USER"), "registry user to use for authentication against the provided registry, can be set via the env var REGISTRY_USER as well")
+	rootCmd.PersistentFlags().StringVar(&rootCfg.RegistryUser, "user", os.Getenv("STATICREG_REGISTRY_USER"), "registry user to use for authentication against the provided registry, can be set via the env var STATICREG_REGISTRY_USER as well")
 	rootCmd.PersistentFlags().StringVar(&rootCfg.RegistryPassword, "password", os.Getenv("STATICREG_REGISTRY_PASSWORD"), "registry password to use for authentication against the provided registry, can be set via the env var STATICREG_REGISTRY_PASSWORD as well")
 	rootCmd.PersistentFlags().BoolVar(&rootCfg.SkipTLSVerify, "skip-tls-verify", false, "disable TLS certificate checks")
 	rootCmd.PersistentFlags().BoolVar(&rootCfg.TLSEnabled, "tls-enable", false, "enable TLS")

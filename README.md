@@ -104,7 +104,7 @@ staticreg serve
 
 **Global Options:**
 - `--registry <hostname>` - Registry hostname (default: `localhost:5000`, env: `STATICREG_REGISTRY_HOSTNAME`)
-- `--user <username>` - Registry username for authentication (env: `REGISTRY_USER`)
+- `--user <username>` - Registry username for authentication (env: `STATICREG_REGISTRY_USER`)
 - `--password <password>` - Registry password for authentication (env: `STATICREG_REGISTRY_PASSWORD`)
 - `--wave-server-url <url>` - Wave server URL for security scanning (default: `https://wave.seqera.io`, env: `WAVE_SERVER_URL`)
 - `--tls-enable` - Enable TLS for registry connections
@@ -154,7 +154,7 @@ Create a secret with the registry details (the registry you want to list images 
 
 ```bash
 kubectl create secret generic registry-credentials \
-  --from-literal=REGISTRY_USER=<username> \
+  --from-literal=STATICREG_REGISTRY_USER=<username> \
   --from-literal=STATICREG_REGISTRY_PASSWORD=<password> \
   --from-literal=STATICREG_REGISTRY_HOSTNAME=<hostname>
 ```
