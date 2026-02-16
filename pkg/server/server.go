@@ -85,6 +85,7 @@ func New(
 
 	r.Use(sloggin.NewWithConfig(log, lmConfig))
 	r.Use(gin.Recovery())
+	r.Use(securityHeadersMiddleware())
 	store := persist.NewMemoryStore(cacheDuration)
 	whService := webhook.NewBatchServiceAdapter(log, dbPool)
 
@@ -178,6 +179,45 @@ func ignoreUserAgentMiddleware(ignoredUserAgents []string) gin.HandlerFunc {
 func cacheControlMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Writer.Header().Set("Cache-Control", "public, max-age=604800, immutable")
+	}
+}
+
+// securityHeadersMiddleware adds recommended security headers to all responses
+func securityHeadersMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// HTTP Strict Transport Security (HSTS)
+		// Instructs browsers to only access the site via HTTPS for the next year
+		// includeSubDomains applies this policy to all subdomains
+		c.Writer.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+
+		// X-Frame-Options
+		// Prevents clickjacking attacks by disallowing the page to be displayed in frames
+		c.Writer.Header().Set("X-Frame-Options", "DENY")
+
+		// X-Content-Type-Options
+		// Prevents MIME-sniffing and forces browser to respect declared content-type
+		c.Writer.Header().Set("X-Content-Type-Options", "nosniff")
+
+		// Content-Security-Policy (CSP)
+		// Defines which resources can be loaded and executed
+		// default-src 'self': Only allow resources from same origin
+		// style-src 'self' 'unsafe-inline': Allow inline styles (needed for many frameworks)
+		// script-src 'self': Only allow scripts from same origin
+		// img-src 'self' data: https:: Allow images from same origin, data URIs, and HTTPS sources
+		// font-src 'self': Only allow fonts from same origin
+		c.Writer.Header().Set("Content-Security-Policy", "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data: https:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';")
+
+		// Referrer-Policy
+		// Controls how much referrer information is sent with requests
+		// strict-origin-when-cross-origin: Send full URL for same-origin, only origin for cross-origin
+		c.Writer.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
+
+		// Permissions-Policy
+		// Controls which browser features and APIs can be used
+		// Denies access to potentially sensitive features like camera, microphone, geolocation
+		c.Writer.Header().Set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), interest-cohort=()")
+
+		c.Next()
 	}
 }
 
