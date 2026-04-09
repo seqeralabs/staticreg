@@ -10,8 +10,8 @@
                 return;
             }
 
-            autocompleteDiv.innerHTML = results.map(result => 
-                `<div class="px-4 py-3 hover:bg-blue-50 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-100 dark:border-gray-600 last:border-b-0 transition-colors duration-150" onclick="selectResult('${result.name}', '${result.path}')">
+            autocompleteDiv.innerHTML = results.map(result =>
+                `<div class="px-4 py-3 hover:bg-blue-50 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-100 dark:border-gray-600 last:border-b-0 transition-colors duration-150" data-result-name="${result.name}" data-result-path="${result.path}">
                     <div class="font-semibold text-gray-900 dark:text-white mb-1">${result.name}</div>
                     <div class="text-sm text-gray-500 dark:text-gray-400">Last updated: ${result.lastUpdatedAt}</div>
                 </div>`
@@ -26,9 +26,12 @@
             }, 150);
         }
 
-        window.selectResult = function(name, path) {
-            window.location.href = path;
-        };
+        autocompleteDiv.addEventListener('click', function(e) {
+            const item = e.target.closest('[data-result-path]');
+            if (item) {
+                window.location.href = item.dataset.resultPath;
+            }
+        });
 
         searchInput.addEventListener('input', function(e) {
             const query = e.target.value.trim();
@@ -65,7 +68,7 @@
         // Handle keyboard navigation
         let currentSelection = -1;
         searchInput.addEventListener('keydown', function(e) {
-            const items = autocompleteDiv.querySelectorAll('div[onclick]');
+            const items = autocompleteDiv.querySelectorAll('div[data-result-path]');
             
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
@@ -97,28 +100,32 @@
         }
     }
 
-    // Repository scan functionality
-    window.fetchScan = function(url, image) {
-        fetch(url, {
+    // Repository scan functionality via event delegation
+    document.addEventListener('click', function(e) {
+        const scanEl = e.target.closest('[data-scan-image]');
+        if (!scanEl) return;
+
+        const image = scanEl.getAttribute('data-scan-image');
+        fetch('/api/scan', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: image,
-            redirect: 'follow'
+            body: image
         })
-            .then(response => {
-                if (response.redirected) {
-                    window.open(response.url, '_blank', 'noopener,noreferrer');
-                } else {
-                    return response.json();
+            .then(response => response.json())
+            .then(data => {
+                if (data.url) {
+                    window.open(data.url, '_blank', 'noopener,noreferrer');
+                } else if (data.error) {
+                    alert("Scan error: " + data.error);
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
                 alert("Error: " + error.message);
             });
-    }
+    });
 
     // Dark mode toggle functionality
     function initDarkModeToggle() {
