@@ -1,9 +1,11 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -67,6 +69,7 @@ func New(
 	cacheDuration time.Duration,
 	ignoredUserAgents []string,
 	dbPool *pgxpool.Pool,
+	waveServerUrl string,
 ) (*Server, error) {
 	gin.SetMode(gin.ReleaseMode)
 
@@ -110,6 +113,7 @@ func New(
 	{
 		apiRoutes.GET("/search", serverImpl.SearchHandler)
 		apiRoutes.POST("/webhook/registry", registryWebhookHandler(whService, log))
+		apiRoutes.POST("/scan", scanProxyHandler(waveServerUrl))
 	}
 
 	htmlRoutes := r.Group("/")
@@ -149,6 +153,62 @@ func (s *Server) Start(ctx context.Context) error {
 		return nil
 	})
 	return g.Wait()
+}
+
+// scanProxyHandler proxies scan requests to the Wave server to avoid cross-origin issues
+func scanProxyHandler(waveServerUrl string) gin.HandlerFunc {
+	baseURL := waveServerUrl
+	if !strings.HasPrefix(baseURL, "https://") && !strings.HasPrefix(baseURL, "http://") {
+		baseURL = "https://" + baseURL
+	}
+	baseURL = strings.TrimRight(baseURL, "/")
+	targetURL := baseURL + "/view/scans"
+
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+
+	return func(c *gin.Context) {
+		body, err := io.ReadAll(c.Request.Body)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "failed to read request body"})
+			return
+		}
+
+		req, err := http.NewRequestWithContext(c.Request.Context(), http.MethodPost, targetURL, bytes.NewReader(body))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create request"})
+			return
+		}
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := client.Do(req)
+		if err != nil {
+			c.JSON(http.StatusBadGateway, gin.H{"error": "failed to reach Wave server"})
+			return
+		}
+		defer resp.Body.Close()
+
+		// Return the redirect URL as JSON so the client can open it in a new tab
+		// without the browser's fetch following the redirect (which CSP would block)
+		if location := resp.Header.Get("Location"); location != "" {
+			if strings.HasPrefix(location, "/") {
+				location = baseURL + location
+			}
+			c.JSON(http.StatusOK, gin.H{"url": location})
+			return
+		}
+
+		respBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			c.JSON(http.StatusBadGateway, gin.H{"error": "failed to read Wave server response"})
+			return
+		}
+		c.Data(resp.StatusCode, resp.Header.Get("Content-Type"), respBody)
+	}
 }
 
 func injectLoggerMiddleware(log *slog.Logger) gin.HandlerFunc {
@@ -199,7 +259,6 @@ func securityHeadersMiddleware() gin.HandlerFunc {
 		c.Writer.Header().Set("X-Content-Type-Options", "nosniff")
 
 		// Content-Security-Policy (CSP)
-		// Defines which resources can be loaded and executed
 		// default-src 'self': Only allow resources from same origin
 		// style-src 'self' 'unsafe-inline': Allow inline styles (needed for many frameworks)
 		// script-src 'self': Only allow scripts from same origin
