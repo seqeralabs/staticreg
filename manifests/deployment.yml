@@ -33,6 +33,22 @@ spec:
             limits:
               memory: "250Mi"
               cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8093
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthz/db
+              port: 8093
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
           env:
             # Registry Configuration
             - name: STATICREG_REGISTRY_USER

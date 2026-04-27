@@ -97,6 +97,14 @@ func New(
 	r.Use(serverImpl.NotFoundHandler)
 	r.Use(serverImpl.InternalServerErrorHandler)
 
+	// Health and metrics endpoints are registered before ignoreUserAgentMiddleware
+	// so kubernetes probes and metric scrapers cannot be silenced by an operator's
+	// ignored-user-agent flag.
+	r.GET("/healthz", livenessHandler)
+	r.GET("/healthz/db", dbReadinessHandler(dbPool))
+	r.GET("/metrics/db", dbMetricsHandler(dbPool))
+	r.GET("/metrics/webhook", webhookMetricsHandler(whService))
+
 	staticRouter := r.Group("/static")
 	{
 		staticRouter.Use(cacheControlMiddleware())

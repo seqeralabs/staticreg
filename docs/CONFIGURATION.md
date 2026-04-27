@@ -270,5 +270,45 @@ export STATICREG_METRICS_BUFFER_SIZE=1000
 
 ```
 
+## Health and Metrics Endpoints
+
+The HTTP server exposes four operational endpoints on the same port as the
+application (default `:8093`). All return JSON.
+
+| Endpoint | Purpose | Status codes |
+|---|---|---|
+| `GET /healthz` | Process liveness. Returns `{"status":"ok"}` whenever the server can respond to HTTP. **No DB dependency** — a transient DB outage does not cause this to fail, so it is safe for a Kubernetes liveness probe (avoids restart storms). | 200 only |
+| `GET /healthz/db` | Database readiness. Pings the pool with a 750ms timeout. Wire to a Kubernetes readiness probe to drain a pod that has lost its DB connection. | 200 / 503 |
+| `GET /metrics/db` | Snapshot of `pgxpool.Stat()` — acquired/idle/max conns, acquire counts, lifetime destroy counts. | 200 / 503 |
+| `GET /metrics/webhook` | Snapshot of the batched webhook adapter's counters — events received/dropped/flushed, batches flushed, current queue size. | 200 / 503 |
+
+These endpoints are exempt from the `--ignored-user-agent` filter, so probe
+clients (e.g. `kube-probe`) cannot be silenced by an operator's flag.
+
+A future Prometheus integration can wrap these JSON shapes without changing
+the underlying data sources.
+
+## Production Checklist
+
+Before deploying StaticReg with postgres in a shared or production environment:
+
+- [ ] **TLS enabled.** `STATICREG_DB_SSLMODE` set to `require`, `verify-ca`, or
+      `verify-full` (or omitted, since `require` is now the default). If you see
+      a `postgres TLS is disabled (sslmode=disable)` warning at startup, fix it.
+- [ ] **Dedicated schema.** `STATICREG_DB_SCHEMA` set to a per-deployment
+      identifier (e.g. `staticreg_prod`) when sharing a database with other
+      applications.
+- [ ] **Pool sizing matches workload.** Tune `STATICREG_DB_MAX_CONNS` and
+      `STATICREG_DB_MIN_CONNS`; coordinate `MAX_CONNS` with postgres'
+      `max_connections` so the pool cannot exhaust the server.
+- [ ] **Probes wired.** Kubernetes `livenessProbe` → `/healthz`, `readinessProbe`
+      → `/healthz/db`. See `manifests/deployment.yml` for the canonical config.
+- [ ] **Secrets.** All `STATICREG_DB_*` credentials sourced from Kubernetes
+      Secrets (or your platform's secret store), never embedded in manifests.
+- [ ] **Migrations strategy understood.** See
+      [POSTGRES_OPERATIONS.md](POSTGRES_OPERATIONS.md) for adding new migrations,
+      rolling back, and inspecting the `goose_db_version` table.
+
 ## Related Documentation
 - [Webhook Batching Architecture](WEBHOOK_BATCHING.md)
+- [Postgres Operations](POSTGRES_OPERATIONS.md)

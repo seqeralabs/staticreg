@@ -60,11 +60,32 @@ PostgreSQL integration for storing container pull/push metrics:
 - Graceful degradation when database is unavailable
 - Schema validation on startup
 
+**Schema Isolation:**
+- All StaticReg tables live in a dedicated postgres schema (default: `staticreg`),
+  never `public`. The schema name is configurable via `STATICREG_DB_SCHEMA` and
+  is set as `search_path` on every pooled connection, so unqualified queries
+  resolve there transparently.
+- This isolation is what makes a single postgres instance safely usable for
+  multiple StaticReg deployments (e.g. `staticreg_prod`, `staticreg_staging`)
+  and for shared databases owned by other applications.
+
 **Schema Management (`pkg/sql`):**
-- SQL schema embedded using Go's `embed` feature
-- Source: `pkg/sql/event_schema.sql`
-- Automatic initialization filters out destructive operations (DROP TABLE)
-- Manual setup supported via `sql/event_schema.sql`
+- Migrations are versioned `.sql` files under `pkg/sql/migrations/`, embedded
+  via `embed.FS` and applied with [pressly/goose](https://github.com/pressly/goose)
+  on startup.
+- The `goose_db_version` table lives inside the dedicated schema and tracks
+  applied versions; reruns are no-ops once all migrations are up.
+- See [`docs/POSTGRES_OPERATIONS.md`](POSTGRES_OPERATIONS.md) for adding new
+  migrations and rolling back.
+
+**Health & Observability:**
+- `GET /healthz` — process liveness, no DB dependency.
+- `GET /healthz/db` — readiness; pings the pool with a 750ms timeout, returns
+  503 if the pool is unconfigured or the ping fails.
+- `GET /metrics/db` — JSON snapshot of `pgxpool.Stat()` (acquired/idle/max
+  conns, acquire counts, lifetime destroy counts).
+- `GET /metrics/webhook` — JSON snapshot of the batched webhook adapter's
+  counters (events received/dropped/flushed, batch count, queue size).
 
 **Database Schema:**
 - `container_pull_metrics` - Aggregated pull metrics table
