@@ -86,6 +86,12 @@ spec:
                   name: staticreg-db-credentials
                   key: STATICREG_DB_SSLMODE
                   optional: true
+            - name: STATICREG_DB_SCHEMA
+              valueFrom:
+                configMapKeyRef:
+                  name: staticreg-config
+                  key: STATICREG_DB_SCHEMA
+                  optional: true
 
             # Webhook Batching Configuration
             - name: STATICREG_METRICS_BATCH_SIZE

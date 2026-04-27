@@ -51,6 +51,7 @@ Configuration for PostgreSQL connection and pooling.
 | `STATICREG_DB_PASSWORD` | string | *(optional)* | PostgreSQL password. Alternative to `STATICREG_DB_URL`. |
 | `STATICREG_DB_NAME` | string | *(required)* | PostgreSQL database name. Alternative to `STATICREG_DB_URL`. Required if using individual variables. |
 | `STATICREG_DB_SSLMODE` | string | *(optional)* | PostgreSQL SSL mode. Options: `disable`, `require`, `verify-ca`, `verify-full`. Alternative to `STATICREG_DB_URL`. |
+| `STATICREG_DB_SCHEMA` | string | `staticreg` | PostgreSQL schema where StaticReg owns its tables. The schema is created on startup if missing and is set as the connection `search_path`. Must match `^[a-z_][a-z0-9_]*$` (lowercase letters, digits, underscores; max 63 chars). Use a per-deployment value (e.g. `staticreg_prod`) when multiple StaticReg instances share a database. |
 
 
 ### Registry Configuration
@@ -105,6 +106,7 @@ export STATICREG_DB_USER="staticreg"
 export STATICREG_DB_PASSWORD="password"
 export STATICREG_DB_NAME="staticreg"
 export STATICREG_DB_SSLMODE="require"
+export STATICREG_DB_SCHEMA="staticreg"
 
 # Webhook Batching
 export STATICREG_METRICS_BATCH_SIZE=200

@@ -5,12 +5,37 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"regexp"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/stdlib"
+	"github.com/pressly/goose/v3"
 	"github.com/seqeralabs/staticreg/pkg/observability/logger"
 	schemasql "github.com/seqeralabs/staticreg/pkg/sql"
 )
+
+// defaultSchema is the postgres schema used when STATICREG_DB_SCHEMA is unset.
+const defaultSchema = "staticreg"
+
+// schemaIdentRegexp validates that a schema name is a safe postgres identifier.
+// Only lowercase letters, digits, and underscores; must not start with a digit.
+// Identifier is interpolated into DDL (CREATE SCHEMA, search_path) since pgx
+// parameters cannot bind identifiers — strict validation prevents injection.
+var schemaIdentRegexp = regexp.MustCompile(`^[a-z_][a-z0-9_]*$`)
+
+// resolveSchema returns the validated schema name from STATICREG_DB_SCHEMA or
+// the default. Returns an error if the env var is set but invalid.
+func resolveSchema() (string, error) {
+	schema := os.Getenv("STATICREG_DB_SCHEMA")
+	if schema == "" {
+		return defaultSchema, nil
+	}
+	if len(schema) > 63 || !schemaIdentRegexp.MatchString(schema) {
+		return "", fmt.Errorf("invalid STATICREG_DB_SCHEMA %q: must match %s and be <=63 chars", schema, schemaIdentRegexp)
+	}
+	return schema, nil
+}
 
 // buildConnectionString constructs a PostgreSQL connection string from environment variables.
 // It prioritizes STATICREG_DB_URL if set, otherwise builds the connection string from individual
@@ -62,11 +87,24 @@ func InitPool() *pgxpool.Pool {
 		return nil
 	}
 
-	config, err := pgxpool.ParseConfig(connStr)
+	schema, err := resolveSchema()
 	if err != nil {
-		slog.Warn("Unable to parse database configuration: %v. Database functions will be disabled.", logger.ErrAttr(err))
+		slog.Warn("Invalid database schema configuration. Database functions will be disabled.", logger.ErrAttr(err))
 		return nil
 	}
+
+	config, err := pgxpool.ParseConfig(connStr)
+	if err != nil {
+		slog.Warn("Unable to parse database configuration. Database functions will be disabled.", logger.ErrAttr(err))
+		return nil
+	}
+
+	// Pin every pooled connection to the dedicated schema so unqualified
+	// identifiers in queries (and goose's bookkeeping table) resolve there.
+	if config.ConnConfig.RuntimeParams == nil {
+		config.ConnConfig.RuntimeParams = map[string]string{}
+	}
+	config.ConnConfig.RuntimeParams["search_path"] = schema
 
 	// Configure connection pool settings
 	config.MaxConns = 25
@@ -77,24 +115,22 @@ func InitPool() *pgxpool.Pool {
 	// Attempt to create the connection pool
 	pool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
-		slog.Warn("Unable to create connection pool: %v. Database functions will be disabled.", logger.ErrAttr(err))
+		slog.Warn("Unable to create connection pool. Database functions will be disabled.", logger.ErrAttr(err))
 		return nil
 	}
 
 	// Attempt to ping the database
 	if err = pool.Ping(ctx); err != nil {
-		slog.Warn("Database connection failed to ping: %v. Database functions will be disabled.", logger.ErrAttr(err))
+		slog.Warn("Database connection failed to ping. Database functions will be disabled.", logger.ErrAttr(err))
 		// Close the pool if ping failed
 		pool.Close()
 		return nil
 	}
 
-	// Success
-	slog.Info("PostgreSQL connection pool successfully initialized.")
+	slog.Info("PostgreSQL connection pool successfully initialized.", slog.String("schema", schema))
 
-	// Initialize database schema
-	if err := initSchema(ctx, pool); err != nil {
-		slog.Error("Failed to initialize database schema: %v. Exiting application.", logger.ErrAttr(err))
+	if err := initSchema(ctx, pool, schema); err != nil {
+		slog.Error("Failed to initialize database schema. Exiting application.", logger.ErrAttr(err))
 		pool.Close()
 		os.Exit(1)
 	}
@@ -102,54 +138,35 @@ func InitPool() *pgxpool.Pool {
 	return pool
 }
 
-// initSchema creates the database schema if it doesn't exist
-func initSchema(ctx context.Context, pool *pgxpool.Pool) error {
+// initSchema ensures the dedicated schema exists and runs all pending migrations.
+// Schema name has already been validated by resolveSchema before this is called.
+func initSchema(ctx context.Context, pool *pgxpool.Pool, schema string) error {
 	if pool == nil {
 		return nil
 	}
 
-	slog.Info("Initializing database schema...")
-
-	// Execute the SQL schema directly (includes DROP TABLE IF EXISTS which is safe)
-	_, err := pool.Exec(ctx, schemasql.EventSchemaSQL)
-	if err != nil {
-		return fmt.Errorf("failed to execute schema: %w", err)
+	// Schema name was validated against schemaIdentRegexp, so direct interpolation is safe.
+	// Goose's bookkeeping table (goose_db_version) lands inside this schema because the
+	// pool's search_path was set above, before the first connection was acquired.
+	if _, err := pool.Exec(ctx, fmt.Sprintf("CREATE SCHEMA IF NOT EXISTS %s", schema)); err != nil {
+		return fmt.Errorf("failed to create schema %q: %w", schema, err)
 	}
 
-	// Validate that the table was created successfully
-	var tableExists bool
-	err = pool.QueryRow(ctx, `
-		SELECT EXISTS (
-			SELECT FROM information_schema.tables
-			WHERE table_schema = 'public'
-			AND table_name = 'container_pull_metrics'
-		)`).Scan(&tableExists)
-	if err != nil {
-		return fmt.Errorf("failed to verify table creation: %w", err)
+	// stdlib.OpenDBFromPool returns a *sql.DB that wraps the pool; closing it
+	// does not close the pool (per pgx docs).
+	db := stdlib.OpenDBFromPool(pool)
+	defer db.Close()
+
+	goose.SetBaseFS(schemasql.Migrations)
+	if err := goose.SetDialect("postgres"); err != nil {
+		return fmt.Errorf("failed to set goose dialect: %w", err)
 	}
-	if !tableExists {
-		return fmt.Errorf("table container_pull_metrics was not created")
+	goose.SetLogger(goose.NopLogger())
+
+	if err := goose.UpContext(ctx, db, "migrations"); err != nil {
+		return fmt.Errorf("failed to apply migrations: %w", err)
 	}
 
-	// Validate that indexes were created successfully
-	expectedIndexes := []string{"idx_pull_date", "idx_repo_date", "idx_repo_arch_date"}
-	for _, indexName := range expectedIndexes {
-		var indexExists bool
-		err = pool.QueryRow(ctx, `
-			SELECT EXISTS (
-				SELECT FROM pg_indexes
-				WHERE schemaname = 'public'
-				AND tablename = 'container_pull_metrics'
-				AND indexname = $1
-			)`, indexName).Scan(&indexExists)
-		if err != nil {
-			return fmt.Errorf("failed to verify index %s: %w", indexName, err)
-		}
-		if !indexExists {
-			return fmt.Errorf("index %s was not created", indexName)
-		}
-	}
-
-	slog.Info("Database schema initialized successfully.")
+	slog.Info("Database schema ready.", slog.String("schema", schema))
 	return nil
 }
