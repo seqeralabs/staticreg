@@ -109,27 +109,30 @@ func InitPool() *pgxpool.Pool {
 	// Configure connection pool settings
 	config.MaxConns = 25
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	// Short timeout for pool construction + initial ping. A separate, longer
+	// budget is used for migrations below — running goose under the same
+	// 10s deadline can produce spurious "context deadline exceeded" failures
+	// at startup even when the database is healthy.
+	poolCtx, poolCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer poolCancel()
 
-	// Attempt to create the connection pool
-	pool, err := pgxpool.NewWithConfig(ctx, config)
+	pool, err := pgxpool.NewWithConfig(poolCtx, config)
 	if err != nil {
 		slog.Warn("Unable to create connection pool. Database functions will be disabled.", logger.ErrAttr(err))
 		return nil
 	}
 
-	// Attempt to ping the database
-	if err = pool.Ping(ctx); err != nil {
+	if err = pool.Ping(poolCtx); err != nil {
 		slog.Warn("Database connection failed to ping. Database functions will be disabled.", logger.ErrAttr(err))
-		// Close the pool if ping failed
 		pool.Close()
 		return nil
 	}
 
 	slog.Info("PostgreSQL connection pool successfully initialized.", slog.String("schema", schema))
 
-	if err := initSchema(ctx, pool, schema); err != nil {
+	migrationCtx, migrationCancel := context.WithTimeout(context.Background(), time.Minute)
+	defer migrationCancel()
+	if err := initSchema(migrationCtx, pool, schema); err != nil {
 		slog.Error("Failed to initialize database schema. Exiting application.", logger.ErrAttr(err))
 		pool.Close()
 		os.Exit(1)

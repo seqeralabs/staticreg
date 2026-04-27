@@ -58,7 +58,9 @@ func TestInitPool_CreatesDedicatedSchemaAndAppliesMigrations(t *testing.T) {
 	}
 
 	// Idempotent re-init: a second InitPool against the same schema must succeed.
-	pool.Close()
+	// Keep `pool` open — t.Cleanup uses it to DROP the schema after the test
+	// body returns. Closing `pool` here would leave the cleanup unable to run
+	// the DROP, leaking the schema between runs.
 	pool2 := InitPool()
 	if pool2 == nil {
 		t.Fatal("second InitPool returned nil")
