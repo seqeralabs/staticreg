@@ -10,24 +10,14 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/seqeralabs/staticreg/pkg/db/dbtest"
 )
 
 // Run with: go test -tags=integration ./pkg/db/...
 // Requires docker-compose postgres up.
 
-func setTestDBEnv(t *testing.T, schema string) {
-	t.Helper()
-	t.Setenv("STATICREG_DB_HOST", "127.0.0.1")
-	t.Setenv("STATICREG_DB_PORT", "5432")
-	t.Setenv("STATICREG_DB_USER", "staticreg")
-	t.Setenv("STATICREG_DB_PASSWORD", "password")
-	t.Setenv("STATICREG_DB_NAME", "staticreg")
-	t.Setenv("STATICREG_DB_SSLMODE", "disable")
-	t.Setenv("STATICREG_DB_SCHEMA", schema)
-}
-
 func TestInitPool_CreatesDedicatedSchemaAndAppliesMigrations(t *testing.T) {
-	setTestDBEnv(t, "staticreg_test")
+	dbtest.SetEnv(t, "staticreg_test")
 
 	pool := InitPool()
 	if pool == nil {
@@ -77,7 +67,7 @@ func TestInitPool_CreatesDedicatedSchemaAndAppliesMigrations(t *testing.T) {
 }
 
 func TestInitPool_RejectsInvalidSchemaName(t *testing.T) {
-	setTestDBEnv(t, "Bad-Schema; DROP TABLE")
+	dbtest.SetEnv(t, "Bad-Schema; DROP TABLE")
 
 	if pool := InitPool(); pool != nil {
 		pool.Close()

@@ -13,23 +13,14 @@ import (
 	"time"
 
 	"github.com/seqeralabs/staticreg/pkg/db"
+	"github.com/seqeralabs/staticreg/pkg/db/dbtest"
 )
 
 // TestBatchAdapter_WritesToDedicatedSchema confirms that an unqualified
 // INSERT issued by BatchServiceAdapter resolves to the dedicated schema
 // because the pool sets search_path on every connection.
 func TestBatchAdapter_WritesToDedicatedSchema(t *testing.T) {
-	for k, v := range map[string]string{
-		"STATICREG_DB_HOST":     "127.0.0.1",
-		"STATICREG_DB_PORT":     "5432",
-		"STATICREG_DB_USER":     "staticreg",
-		"STATICREG_DB_PASSWORD": "password",
-		"STATICREG_DB_NAME":     "staticreg",
-		"STATICREG_DB_SSLMODE":  "disable",
-		"STATICREG_DB_SCHEMA":   "staticreg_batch_test",
-	} {
-		t.Setenv(k, v)
-	}
+	dbtest.SetEnv(t, "staticreg_batch_test")
 	pool := db.InitPool()
 	if pool == nil {
 		t.Fatal("InitPool returned nil")
