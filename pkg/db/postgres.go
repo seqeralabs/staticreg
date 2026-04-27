@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
+	"github.com/seqeralabs/staticreg/pkg/cfg"
 	"github.com/seqeralabs/staticreg/pkg/observability/logger"
 	schemasql "github.com/seqeralabs/staticreg/pkg/sql"
 )
@@ -41,12 +42,12 @@ func resolveSchema() (string, error) {
 // It prioritizes STATICREG_DB_URL if set, otherwise builds the connection string from individual
 // STATICREG_DB_* environment variables. Returns empty string if no configuration is provided.
 func buildConnectionString() string {
-	// First, check if STATICREG_DB_URL is provided (highest priority)
+	// STATICREG_DB_URL is taken as-is — the user already has full control over
+	// sslmode via the query string.
 	if connStr := os.Getenv("STATICREG_DB_URL"); connStr != "" {
 		return connStr
 	}
 
-	// Build connection string from individual components
 	host := os.Getenv("STATICREG_DB_HOST")
 	port := os.Getenv("STATICREG_DB_PORT")
 	user := os.Getenv("STATICREG_DB_USER")
@@ -54,23 +55,23 @@ func buildConnectionString() string {
 	dbname := os.Getenv("STATICREG_DB_NAME")
 	sslmode := os.Getenv("STATICREG_DB_SSLMODE")
 
-	// Require at minimum: host, user, and dbname
 	if host == "" || user == "" || dbname == "" {
 		return ""
 	}
 
-	// Build the connection string with required fields
-	connStr := fmt.Sprintf("host=%s user=%s dbname=%s", host, user, dbname)
+	// Default to TLS-enforced so production deployments encrypt traffic
+	// without explicit opt-in. Operators must set sslmode=disable explicitly
+	// to opt out (see the warn in InitPool).
+	if sslmode == "" {
+		sslmode = "require"
+	}
 
-	// Add optional fields if provided
+	connStr := fmt.Sprintf("host=%s user=%s dbname=%s sslmode=%s", host, user, dbname, sslmode)
 	if port != "" {
 		connStr += fmt.Sprintf(" port=%s", port)
 	}
 	if password != "" {
 		connStr += fmt.Sprintf(" password=%s", password)
-	}
-	if sslmode != "" {
-		connStr += fmt.Sprintf(" sslmode=%s", sslmode)
 	}
 
 	return connStr
@@ -99,6 +100,13 @@ func InitPool() *pgxpool.Pool {
 		return nil
 	}
 
+	// pgx leaves TLSConfig nil only when sslmode=disable. Warn loudly so
+	// insecure deployments are visible in logs even if the operator chose to
+	// opt out explicitly.
+	if config.ConnConfig.TLSConfig == nil {
+		slog.Warn("postgres TLS is disabled (sslmode=disable). Database traffic is unencrypted. Set STATICREG_DB_SSLMODE=require (or higher) for production.")
+	}
+
 	// Pin every pooled connection to the dedicated schema so unqualified
 	// identifiers in queries (and goose's bookkeeping table) resolve there.
 	if config.ConnConfig.RuntimeParams == nil {
@@ -106,8 +114,7 @@ func InitPool() *pgxpool.Pool {
 	}
 	config.ConnConfig.RuntimeParams["search_path"] = schema
 
-	// Configure connection pool settings
-	config.MaxConns = 25
+	applyPoolTuning(config)
 
 	// Short timeout for pool construction + initial ping. A separate, longer
 	// budget is used for migrations below — running goose under the same
@@ -172,4 +179,23 @@ func initSchema(ctx context.Context, pool *pgxpool.Pool, schema string) error {
 
 	slog.Info("Database schema ready.", slog.String("schema", schema))
 	return nil
+}
+
+// applyPoolTuning sets pool sizing and lifetimes from STATICREG_DB_* env vars.
+// Defaults preserve historical behavior (MaxConns=25) while letting operators
+// tune for their workload without rebuilding.
+func applyPoolTuning(config *pgxpool.Config) {
+	config.MaxConns = int32(cfg.EnvInt("STATICREG_DB_MAX_CONNS", 25))
+	config.MinConns = int32(cfg.EnvInt("STATICREG_DB_MIN_CONNS", 2))
+	config.MaxConnLifetime = cfg.EnvDuration("STATICREG_DB_MAX_CONN_LIFETIME", time.Hour)
+	config.MaxConnIdleTime = cfg.EnvDuration("STATICREG_DB_MAX_CONN_IDLE_TIME", 30*time.Minute)
+	config.HealthCheckPeriod = cfg.EnvDuration("STATICREG_DB_HEALTHCHECK_PERIOD", time.Minute)
+
+	slog.Info("PostgreSQL pool tuning",
+		slog.Int("max_conns", int(config.MaxConns)),
+		slog.Int("min_conns", int(config.MinConns)),
+		slog.Duration("max_conn_lifetime", config.MaxConnLifetime),
+		slog.Duration("max_conn_idle_time", config.MaxConnIdleTime),
+		slog.Duration("healthcheck_period", config.HealthCheckPeriod),
+	)
 }

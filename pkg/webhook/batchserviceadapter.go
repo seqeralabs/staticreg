@@ -18,14 +18,13 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"os"
-	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/seqeralabs/staticreg/pkg/cfg"
 )
 
 // BatchServiceAdapter processes webhook events asynchronously with batching
@@ -54,9 +53,9 @@ type BatchServiceAdapter struct {
 //   - STATICREG_METRICS_FLUSH_INTERVAL: Time interval to force flush (default: 5s)
 //   - STATICREG_METRICS_BUFFER_SIZE: Channel buffer size (default: 10000)
 func NewBatchServiceAdapter(log *slog.Logger, pool *pgxpool.Pool) *BatchServiceAdapter {
-	batchSize := getEnvInt("STATICREG_METRICS_BATCH_SIZE", 100)
-	flushInterval := getEnvDuration("STATICREG_METRICS_FLUSH_INTERVAL", 5*time.Second)
-	bufferSize := getEnvInt("STATICREG_METRICS_BUFFER_SIZE", 10000)
+	batchSize := cfg.EnvInt("STATICREG_METRICS_BATCH_SIZE", 100)
+	flushInterval := cfg.EnvDuration("STATICREG_METRICS_FLUSH_INTERVAL", 5*time.Second)
+	bufferSize := cfg.EnvInt("STATICREG_METRICS_BUFFER_SIZE", 10000)
 
 	adapter := &BatchServiceAdapter{
 		Logger:        log,
@@ -270,22 +269,3 @@ func (a *BatchServiceAdapter) GetMetrics() map[string]int64 {
 	}
 }
 
-// getEnvInt reads an integer from environment variable with a default fallback
-func getEnvInt(key string, defaultValue int) int {
-	if val := os.Getenv(key); val != "" {
-		if intVal, err := strconv.Atoi(val); err == nil {
-			return intVal
-		}
-	}
-	return defaultValue
-}
-
-// getEnvDuration reads a duration from environment variable with a default fallback
-func getEnvDuration(key string, defaultValue time.Duration) time.Duration {
-	if val := os.Getenv(key); val != "" {
-		if duration, err := time.ParseDuration(val); err == nil {
-			return duration
-		}
-	}
-	return defaultValue
-}

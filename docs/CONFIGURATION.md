@@ -50,8 +50,18 @@ Configuration for PostgreSQL connection and pooling.
 | `STATICREG_DB_USER` | string | *(required)* | PostgreSQL username. Alternative to `STATICREG_DB_URL`. Required if using individual variables. |
 | `STATICREG_DB_PASSWORD` | string | *(optional)* | PostgreSQL password. Alternative to `STATICREG_DB_URL`. |
 | `STATICREG_DB_NAME` | string | *(required)* | PostgreSQL database name. Alternative to `STATICREG_DB_URL`. Required if using individual variables. |
-| `STATICREG_DB_SSLMODE` | string | *(optional)* | PostgreSQL SSL mode. Options: `disable`, `require`, `verify-ca`, `verify-full`. Alternative to `STATICREG_DB_URL`. |
+| `STATICREG_DB_SSLMODE` | string | `require` | PostgreSQL SSL mode. Options: `disable`, `require`, `verify-ca`, `verify-full`. Applies only when individual `STATICREG_DB_*` variables are used; with `STATICREG_DB_URL`, encode `?sslmode=...` in the URL instead. **TLS is enforced by default** — set this to `disable` to opt out (a warning is logged at startup so insecure deployments are visible). |
 | `STATICREG_DB_SCHEMA` | string | `staticreg` | PostgreSQL schema where StaticReg owns its tables. The schema is created on startup if missing and is set as the connection `search_path`. Must match `^[a-z_][a-z0-9_]*$` (lowercase letters, digits, underscores; max 63 chars). Use a per-deployment value (e.g. `staticreg_prod`) when multiple StaticReg instances share a database. |
+| `STATICREG_DB_MAX_CONNS` | integer | `25` | Maximum number of open connections in the pool. Increase for high-concurrency workloads; coordinate with the postgres `max_connections` setting. |
+| `STATICREG_DB_MIN_CONNS` | integer | `2` | Minimum number of idle connections kept warm in the pool. |
+| `STATICREG_DB_MAX_CONN_LIFETIME` | duration | `1h` | Maximum lifetime of a connection before it is rotated. Encourages load balancing across postgres replicas and recovery from stale state. |
+| `STATICREG_DB_MAX_CONN_IDLE_TIME` | duration | `30m` | Maximum time an idle connection is kept before being closed. |
+| `STATICREG_DB_HEALTHCHECK_PERIOD` | duration | `1m` | How often the pool runs background health checks on idle connections. |
+
+#### Migration notes (v0.7 → v0.8)
+
+- **TLS default changed.** Previously, an unset `STATICREG_DB_SSLMODE` produced `sslmode=disable` (no TLS). It now defaults to `sslmode=require`. Deployments that rely on plaintext connections must set `STATICREG_DB_SSLMODE=disable` explicitly; a warning will be logged on startup.
+- **Pool tuning is now configurable.** The previously-hardcoded `MaxConns=25` is now the default for `STATICREG_DB_MAX_CONNS`; behavior is unchanged unless you override it.
 
 
 ### Registry Configuration

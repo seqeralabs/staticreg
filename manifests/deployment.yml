@@ -93,6 +93,38 @@ spec:
                   key: STATICREG_DB_SCHEMA
                   optional: true
 
+            # Database Connection Pool Tuning (all optional)
+            - name: STATICREG_DB_MAX_CONNS
+              valueFrom:
+                configMapKeyRef:
+                  name: staticreg-config
+                  key: STATICREG_DB_MAX_CONNS
+                  optional: true
+            - name: STATICREG_DB_MIN_CONNS
+              valueFrom:
+                configMapKeyRef:
+                  name: staticreg-config
+                  key: STATICREG_DB_MIN_CONNS
+                  optional: true
+            - name: STATICREG_DB_MAX_CONN_LIFETIME
+              valueFrom:
+                configMapKeyRef:
+                  name: staticreg-config
+                  key: STATICREG_DB_MAX_CONN_LIFETIME
+                  optional: true
+            - name: STATICREG_DB_MAX_CONN_IDLE_TIME
+              valueFrom:
+                configMapKeyRef:
+                  name: staticreg-config
+                  key: STATICREG_DB_MAX_CONN_IDLE_TIME
+                  optional: true
+            - name: STATICREG_DB_HEALTHCHECK_PERIOD
+              valueFrom:
+                configMapKeyRef:
+                  name: staticreg-config
+                  key: STATICREG_DB_HEALTHCHECK_PERIOD
+                  optional: true
+
             # Webhook Batching Configuration
             - name: STATICREG_METRICS_BATCH_SIZE
               valueFrom:

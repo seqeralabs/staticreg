@@ -179,18 +179,3 @@ func TestBatchServiceAdapter_MetricsTracking(t *testing.T) {
 	_ = adapter.Close(5 * time.Second)
 }
 
-func TestGetEnvInt(t *testing.T) {
-	// Test default value
-	val := getEnvInt("NONEXISTENT_ENV_VAR", 42)
-	if val != 42 {
-		t.Errorf("Expected default value 42, got %d", val)
-	}
-}
-
-func TestGetEnvDuration(t *testing.T) {
-	// Test default value
-	val := getEnvDuration("NONEXISTENT_ENV_VAR", 5*time.Second)
-	if val != 5*time.Second {
-		t.Errorf("Expected default value 5s, got %v", val)
-	}
-}
