@@ -14,9 +14,7 @@
 // limitations under the License.
 package sql
 
-import (
-	_ "embed"
-)
+import "embed"
 
-//go:embed event_schema.sql
-var EventSchemaSQL string
+//go:embed migrations/*.sql
+var Migrations embed.FS
