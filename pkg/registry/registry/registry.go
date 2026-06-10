@@ -94,14 +94,16 @@ func (c *Registry) ImageInfo(ctx context.Context, image string, tag string) (reg
 	if err == nil {
 		indexManifest, err := index.IndexManifest()
 		if err == nil {
-			manifests := indexManifest.Manifests
-			if manifests != nil {
-				for _, manifest := range manifests {
-					arch := manifest.Platform.Architecture
-					if arch != "unknown" {
-						architectures = append(architectures, arch)
-						scanUrls = append(scanUrls, c.getScanUrl(ref.Context().Name(), manifest.Digest.String(), arch))
-					}
+			for _, manifest := range indexManifest.Manifests {
+				// Platform is optional in OCI index entries (e.g. attestation
+				// manifests) — dereferencing it unguarded crashes the sync loop.
+				if manifest.Platform == nil {
+					continue
+				}
+				arch := manifest.Platform.Architecture
+				if arch != "unknown" {
+					architectures = append(architectures, arch)
+					scanUrls = append(scanUrls, c.getScanUrl(ref.Context().Name(), manifest.Digest.String(), arch))
 				}
 			}
 		}
