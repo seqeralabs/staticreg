@@ -1,6 +1,6 @@
 module github.com/seqeralabs/staticreg
 
-go 1.24.3
+go 1.25.0
 
 require (
 	github.com/breml/rootcerts v0.2.21
@@ -13,7 +13,7 @@ require (
 	github.com/puzpuzpuz/xsync/v3 v3.5.1
 	github.com/samber/slog-gin v1.15.1
 	github.com/spf13/cobra v1.9.1
-	golang.org/x/sync v0.14.0
+	golang.org/x/sync v0.20.0
 )
 
 require (
@@ -65,10 +65,10 @@ require (
 	go.opentelemetry.io/otel/trace v1.36.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.17.0 // indirect
-	golang.org/x/crypto v0.38.0 // indirect
-	golang.org/x/net v0.40.0 // indirect
-	golang.org/x/sys v0.33.0 // indirect
-	golang.org/x/text v0.25.0 // indirect
+	golang.org/x/crypto v0.52.0 // indirect
+	golang.org/x/net v0.54.0 // indirect
+	golang.org/x/sys v0.45.0 // indirect
+	golang.org/x/text v0.37.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
