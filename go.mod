@@ -8,7 +8,7 @@ require (
 	github.com/chenyahui/gin-cache v1.9.0
 	github.com/gin-gonic/gin v1.10.1
 	github.com/google/go-containerregistry v0.20.4
-	github.com/jackc/pgx/v5 v5.7.6
+	github.com/jackc/pgx/v5 v5.9.2
 	github.com/pressly/goose/v3 v3.24.3
 	github.com/puzpuzpuz/xsync/v3 v3.5.1
 	github.com/samber/slog-gin v1.15.1
