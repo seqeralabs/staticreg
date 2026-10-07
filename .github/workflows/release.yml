@@ -20,13 +20,6 @@ jobs:
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # ratchet:actions/setup-go@v7.0.0
         with:
           go-version: "1.27.1"
-      - name: Login to Registry
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # ratchet:docker/login-action@v4.6.0
-        with:
-          registry: cr.seqera.io
-          username: ${{ secrets.SEQERA_CR_USERNAME }}
-          password: ${{ secrets.SEQERA_CR_PASSWORD }}
       # seqeralabs/actions/push is private and this repo is public, so the role chain is inlined
       # like seqeralabs/wave. The chained role can only push to internal/seqeralabs/staticreg/*.
       - name: Configure AWS credentials for internal action role
